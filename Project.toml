@@ -1,0 +1,4 @@
+name = "GameDataManger"
+uuid = "484cdbfd-4c57-4c6b-be6b-40133c5dcebd"
+authors = ["YongHeeKim <masterplanf@gmail.com>"]
+version = "0.1.0"
