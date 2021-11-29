@@ -1,4 +1,5 @@
 {
+    "name": "MyGame",
     "environment": {
         "xlsxpath": "./xlsx",
         "outpath": "./json"

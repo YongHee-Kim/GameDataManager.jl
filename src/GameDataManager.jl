@@ -1,12 +1,15 @@
-module GameDataManger
+module GameDataManager
 
 using JSON, JSONPointer, JSONSchema
-using XLSxasJSON
+using XLSXasJSON
+using OrderedCollections
 using SQLite, Tables
+
+export init_project
 
 
 include("init.jl")
-include("project_setup.jl")
+include("setup.jl")
 
 
 
