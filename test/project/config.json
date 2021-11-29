@@ -1,0 +1,20 @@
+{
+    "environment": {
+        "xlsxpath": "./xlsx",
+        "outpath": "./json"
+    },
+    "xlsxtables": {
+        "Items.xlsx": {
+            "workSheets": [
+                {
+                    "name": "Equip",
+                    "out": "Items_Equip.json"
+                },
+                {
+                    "name": "Consum",
+                    "out": "Items_Consum.json"
+                }
+            ]
+        }
+    }
+}

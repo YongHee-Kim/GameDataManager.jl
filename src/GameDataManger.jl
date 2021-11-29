@@ -1,5 +1,13 @@
 module GameDataManger
 
-greet() = print("Hello World!")
+using JSON, JSONPointer, JSONSchema
+using XLSxasJSON
+using SQLite, Tables
+
+
+include("init.jl")
+include("project_setup.jl")
+
+
 
 end # module
