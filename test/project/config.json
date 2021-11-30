@@ -19,7 +19,10 @@
                 {
                     "name": "Consumable",
                     "out": "Items_Consumable.json",
-                    "localize": false
+                    "localize": false,
+                    "kwargs": {
+                        "start_line": 2
+                    }
                 }
             ]
         },
