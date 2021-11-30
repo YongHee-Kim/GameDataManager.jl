@@ -1,21 +1,30 @@
 {
+    "$schema": "../../data/config.json",
     "name": "MyGame",
     "environment": {
-        "xlsxpath": "./xlsx",
-        "outpath": "./json"
+        "xlsx": "./xlsx",
+        "out": "./json"
     },
     "xlsxtables": {
         "Items.xlsx": {
             "workSheets": [
                 {
-                    "name": "Equip",
-                    "out": "Items_Equip.json"
+                    "name": "Equipment",
+                    "out": "Items_Equipment.json",
+                    "localize": {
+                        "keycolumn": "/Key"
+                    }, 
+                    "kwargs": {}
                 },
                 {
-                    "name": "Consum",
-                    "out": "Items_Consum.json"
+                    "name": "Consumable",
+                    "out": "Items_Consumable.json",
+                    "localize": false
                 }
             ]
+        },
+        "NotExistFile.xlsm": {
+
         }
     }
 }

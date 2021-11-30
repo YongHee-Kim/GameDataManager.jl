@@ -2,7 +2,7 @@ const GAMEENV = Dict{String,Any}()
 const CACHE = Dict{String,Any}(
         "config" => missing,
         "validation" => true,
-        "tables" => Dict{String,Any}(),
+        "tables" => Dict{Symbol,Any}(),
         "tablesschema" => Dict())
 
 function setupenv()
