@@ -5,8 +5,9 @@ wrapper around JSONWorkbook
 """
 mutable struct XLSXTable{FileName}
     data::Union{JSONWorkbook, String}
+    localizedata::Dict{String, Any}
     mtime
-    out::Dict{String, String}
+    out::Dict{String, String} # output filename
     localize_key::Dict{String, Any}
     kwargs::Dict{String, Any}
 end
@@ -15,6 +16,7 @@ function XLSXTable(file, config)
 
     out = Dict{String, String}()
     localize_key = Dict{String, Any}()
+    localizedata = Dict{String, Any}()
     kwargs = Dict{String, Any}()
 
     for row in config["workSheets"]
@@ -24,7 +26,7 @@ function XLSXTable(file, config)
         localize_key[name] = begin 
             loc = get(row, "localize", true) 
             if isa(loc, Bool) 
-                loc ? "" : missing 
+                loc ? "" : false 
             else 
                 loc["keycolumn"]
             end
@@ -34,8 +36,9 @@ function XLSXTable(file, config)
             else 
                 missing 
             end
+        localizedata[name] = missing
     end
-    XLSXTable{FileName}(file, missing, out, localize_key, kwargs)
+    XLSXTable{FileName}(file, localizedata, missing, out, localize_key, kwargs)
 end
 
 
@@ -54,13 +57,15 @@ function loadtable(fname::Symbol)
             end
         end
     end
-    table = CACHE["tables"][fname]
-    if !isa(table.data, JSONWorkbook)
-        kwarg_per_sheet = table.kwargs
-        jwb = JSONWorkbook(table.data, keys(kwarg_per_sheet), kwarg_per_sheet)
-        table.data = jwb
+
+    tb = CACHE["tables"][fname]
+    if !isa(tb.data, JSONWorkbook)
+        kwarg_per_sheet = tb.kwargs
+        jwb = JSONWorkbook(tb.data, keys(kwarg_per_sheet), kwarg_per_sheet)
+        tb.data = jwb
+        localize!(tb)
     end
-    return table
+    return tb
 end
 
 

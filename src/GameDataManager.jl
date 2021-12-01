@@ -13,9 +13,9 @@ export init_project, xl
 include("tables.jl")
 include("init.jl")
 include("setup.jl")
-# include("exporter.jl")
+include("exporter.jl")
+include("localizer.jl")
 include("utils.jl")
-
 
 
 end # module

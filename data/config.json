@@ -18,11 +18,18 @@
       "description": "relative paths from project root, those will be sotred in 'GAMEENV'",
       "required": [
         "xlsx",
-        "out"
+        "out", 
+        "localize"
       ],
       "properties": {
         "xlsx": {
           "description": "root path for Excel files"
+        }, 
+        "out": {
+          "description": "root path for converted files"
+        },
+        "localize": {
+          "description": "root path for localization data"
         }
       },
       "patternProperties": {

@@ -1,8 +1,5 @@
 function xl(exportall::Bool = false)
-    reload_meta!()
-    updateschema_tablekey()
-
-    files = exportall ? collect_auto_xlsx() : collect_modified_xlsx()
+    files = keys(CACHE["tables"])
     if isempty(files)
         print_section("추출할 파일이 없습니다."; color=:yellow)
     else
@@ -14,13 +11,13 @@ function xl(exportall::Bool = false)
             try
                 export_xlsxtable(f)
             catch e
-                printstyled("$f json -> xlsx 변환 실패\n"; color = :red)
+                printstyled("$f 데이터 추출 실패\n"; color = :red)
             end
         end
-        print_section("json 추출이 완료되었습니다 ☺", "DONE"; color = :cyan)
+        print_section("데이터 추출이 완료되었습니다 ☺", "DONE"; color = :cyan)
     end
 end
-function xl(file::AbstractString)
+function xl(file)
     reload_meta!()
 
     print_section(
@@ -33,28 +30,65 @@ function xl(file::AbstractString)
     nothing
 end
 
-function json_to_xl()
-    print_section(
-        "json -> xlsx 재변환을 시작합니다 ⚒\n" * "-"^(displaysize(stdout)[2] - 4);
-        color = :cyan,
-    )
 
-    for f in collect_auto_xlsx()
-        try
-            reconstruct_xlsxtable(f)
-        catch e
-            printstyled("$f json -> xlsx 변환 실패\n"; color = :red)
+"""
+    export_gamedata(file::AbstractString)
+    export_gamedata(exportall::Bool = false)
+
+* file="filename.xlsx": 지정된 파일만 json으로 추출합니다
+* exportall = true    : 모든 파일을 json으로 추출합니다
+* exportall = false   : 변경된 .xlsx파일만 json으로 추출합니다
+
+mars 메인 저장소의 '.../_META.json'에 명시된 파일만 추출가능합니다
+"""
+function export_xlsxtable(fname)
+    println("『", fname, "』")
+    tb = loadtable(fname)
+
+    for s in sheetnames(tb)
+        fname = tb.out[s]
+        write_worksheet(fname, tb.data[s])
+        localize = tb.localizedata[s]
+        if !ismissing(localize)
+            write_localize(fname, localize)
         end
     end
-    print_section("xlsx 변환이 완료되었습니다 ☺", "DONE"; color = :cyan)
+    nothing
 end
-function json_to_xl(f::AbstractString)
-    print_section(
-        "json -> xlsx 재변환을 시작합니다 ⚒\n" * "-"^(displaysize(stdout)[2] - 4);
-        color = :cyan,
-    )
+function write_worksheet(fname, jws::JSONWorksheet)
+    dir = GAMEENV["OUT"]
 
-    reconstruct_xlsxtable(f)
+    io = joinpath(dir, fname)
+    newdata = JSON.json(jws, 2)
+    # 편집된 시트만 저장
+    modified = true
+    if isfile(io)
+        modified = !issamedata(read(io, String), newdata)
+    end
+    if modified
+        write(io, newdata)
+        print(" SAVE => ")
+        printstyled(normpath(io), "\n"; color = :blue)
+    else
+        print("  ⁿ/ₐ => ")
+        print(normpath(io), "\n")
+    end
+end
+function write_localize(fname, localizedata)
+    dir = GAMEENV["LOCALIZE"]
+    io = joinpath(dir, fname)
+    modified = true
 
-    print_section("xlsx 변환이 완료되었습니다 ☺", "DONE"; color = :cyan)
+    newdata = JSON.json(localizedata, 2)
+    if isfile(io)
+        modified = !issamedata(read(io, String), newdata)
+    end
+    if modified
+        write(io, newdata)
+        print("⨽  SAVE => ")
+        printstyled(normpath(io), "\n"; color = :blue)
+    else
+        print("  ⨽  => ")
+        print(normpath(io), "\n")
+    end
 end

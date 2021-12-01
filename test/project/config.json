@@ -3,7 +3,8 @@
     "name": "MyGame",
     "environment": {
         "xlsx": "./xlsx",
-        "out": "./json"
+        "out": "./json",
+        "localize": "./localization"
     },
     "xlsxtables": {
         "Items.xlsx": {

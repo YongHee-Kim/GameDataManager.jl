@@ -9,6 +9,9 @@ end
 function skipnull(itr)
     skipnothing(skipmissing(itr))
 end
+function issamedata(a, b)::Bool
+    isequal(hash(a), hash(b))
+end
 
 function namedtuple(d::AbstractDict{String,T}) where T
     key = (Symbol.(collect(keys(d)))...,)
