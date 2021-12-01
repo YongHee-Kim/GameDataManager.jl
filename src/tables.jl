@@ -22,19 +22,18 @@ function XLSXTable(file, config)
     for row in config["workSheets"]
         name = row["name"]
         out[name] = row["out"]
-        # default: uses row number for localize key 
         localize_key[name] = begin 
-            loc = get(row, "localize", true) 
-            if isa(loc, Bool) 
-                loc ? "" : false 
-            else 
-                loc["keycolumn"]
+            loc = get(row, "localize", missing) 
+            # default: uses row number for localize key 
+            if !ismissing(loc)
+                loc = get(loc, "keycolumn", "")
             end
+            loc 
         end
         kwargs[name] = if haskey(row, "kwargs")
                 namedtuple(row["kwargs"])
             else 
-                missing 
+                namedtuple(Dict{String,Any}())
             end
         localizedata[name] = missing
     end

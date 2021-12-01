@@ -18,8 +18,6 @@ function xl(exportall::Bool = false)
     end
 end
 function xl(file)
-    reload_meta!()
-
     print_section(
         "xlsx -> json 추출을 시작합니다 ⚒\n" * "-"^(displaysize(stdout)[2] - 4);
         color = :cyan,
