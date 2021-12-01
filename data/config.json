@@ -1,72 +1,77 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "GameDataManager/data/config.json",
-  "description": "GameDataManager config schema",
-  "type": "object",
-  "required": [
-    "name",
-    "environment",
-    "xlsxtables"
-  ],
-  "properties": {
-    "name": {
-      "description": "name of the project",
-      "type": "string"
-    },
-    "environment": {
-      "type": "object",
-      "description": "relative paths from project root, those will be sotred in 'GAMEENV'",
-      "required": [
-        "xlsx",
-        "out", 
-        "localize"
-      ],
-      "properties": {
-        "xlsx": {
-          "description": "root path for Excel files"
-        }, 
-        "out": {
-          "description": "root path for converted files"
-        },
-        "localize": {
-          "description": "root path for localization data"
-        }
-      },
-      "patternProperties": {
-        "*": {
-          "type": "string"
-        }
-      }
-    },
-    "xlsxtables": {
-      "type": "object",
-      "description": "configurations for excel woorkbook",
-      "propertyNames": {
-        "pattern": ".+(.xlsx$)|(.xlsm$)"
-      }
-    }
-  },
-  "definitions": {
-    "workSheetsItem": {
-      "type": "object",
-      "required": [
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "GameDataManager/data/config.json",
+    "description": "GameDataManager config schema",
+    "type": "object",
+    "required": [
         "name",
-        "out"
-      ],
-      "properties": {
+        "environment",
+        "xlsxtables"
+    ],
+    "properties": {
         "name": {
-          "type": "string",
-          "description": "name of worksheet"
+            "description": "name of the project",
+            "type": "string"
         },
-        "out": {
-          "type": "string",
-          "description": "output file can be `.json`, '.tsv', '.csv'",
-          "pattern": ".+(.json$)|(.csv$)|(.tsv$)"
+        "environment": {
+            "type": "object",
+            "description": "relative paths from project root, those will be sotred in 'GAMEENV'",
+            "required": [
+                "xlsx",
+                "out",
+                "localize"
+            ],
+            "properties": {
+                "xlsx": {
+                    "description": "root path for Excel files"
+                },
+                "out": {
+                    "description": "root path for converted files"
+                },
+                "localize": {
+                    "description": "root path for localization data"
+                }
+            }
         },
-        "localize": {
-          
+        "xlsxtables": {
+            "type": "object",
+            "propertyNames": {
+                "pattern": ".+(.xlsx$)|(.xlsm$)"
+            },
+            "patternProperties": {
+              ".+": {
+                  "type": "object",
+                  "description": "name of excel file",
+                  "properties": {
+                      "workSheets": {
+                          "description": "configuration for each worksheet",
+                          "items" : {"$ref": "#/definitions/workSheetsItem"}
+                      }
+                  }
+              }
+          }
         }
-      }
+    },
+    "definitions": {
+        "workSheetsItem": {
+            "type": "object",
+            "required": [
+                "name",
+                "out"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "name of worksheet"
+                },
+                "out": {
+                    "type": "string",
+                    "description": "output file can be `.json`, '.tsv', '.csv'",
+                    "pattern": ".+(.json$)|(.csv$)|(.tsv$)"
+                },
+                "localize": {},
+                "kwargs": {}
+            }
+        }
     }
-  }
 }
