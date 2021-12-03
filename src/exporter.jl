@@ -57,7 +57,15 @@ function write_worksheet(fname, jws::JSONWorksheet)
     dir = GAMEENV["OUT"]
 
     io = joinpath(dir, fname)
-    newdata = JSON.json(jws, 2)
+    ext = splitext(fname)[2]
+    if ext == ".json"
+        newdata = JSON.json(jws.data, 2)
+    elseif ext == ".csv"
+        newdata = _csv(jws)
+    else 
+        throw(ArgumentError("\"$ext\" file type is not supported, use \".json\" or \".csv\""))
+    end
+        
     # 편집된 시트만 저장
     modified = true
     if isfile(io)
@@ -72,6 +80,34 @@ function write_worksheet(fname, jws::JSONWorksheet)
         print(normpath(io), "\n")
     end
 end
+
+function _csv(jws::JSONWorksheet)
+    # writedlm(io, [x y])
+    colnames = map(el -> '/' * join(el.tokens, '/'), keys(jws))
+    s = join(colnames, ',') * '\n'
+    for i in 1:length(jws)
+        s *= join(_csv.(values(jws[i])), ',')
+        if i < length(jws)
+            s *= '\n'
+        end
+    end
+    return s
+end
+
+_csv(x) = string(x)
+_csv(x::Missing) = ""
+_csv(x::Nothing) = ""
+_csv(x::AbstractString) = x
+_csv(x::AbstractArray) = "[" * join(x, ";") * "]"
+function _csv(x::AbstractDict) 
+    s = "{"
+    for (k, v) in x 
+        s *= "\"$k\":" * _csv(v)
+    end
+    s *= "}"
+    return s 
+end
+
 function write_localize(fname, localizedata)
     dir = GAMEENV["LOCALIZE"]
     io = joinpath(dir, fname)
