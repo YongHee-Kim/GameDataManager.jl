@@ -30,6 +30,12 @@
                 },
                 "localize": {
                     "description": "root path for localization data"
+                },
+                "jsonschema": {
+                    "description": "(optional)root path for json schema for datas"
+                },
+                "juliaModule": {
+                    "description": "(optional)Julia module for your project, name of module should be same as the name of project"
                 }
             }
         },
@@ -39,17 +45,19 @@
                 "pattern": ".+(.xlsx$)|(.xlsm$)"
             },
             "patternProperties": {
-              ".+": {
-                  "type": "object",
-                  "description": "name of excel file",
-                  "properties": {
-                      "workSheets": {
-                          "description": "configuration for each worksheet",
-                          "items" : {"$ref": "#/definitions/workSheetsItem"}
-                      }
-                  }
-              }
-          }
+                ".+(.xlsx$)|(.xlsm$)": {
+                    "type": "object",
+                    "description": "name of excel file",
+                    "properties": {
+                        "workSheets": {
+                            "description": "configuration for each worksheet",
+                            "items": {
+                                "$ref": "#/definitions/workSheetsItem"
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -59,6 +67,7 @@
                 "name",
                 "out"
             ],
+            "additionalProperties": false,
             "properties": {
                 "name": {
                     "type": "string",
@@ -69,8 +78,31 @@
                     "description": "output file can be `.json`, '.tsv', '.csv'",
                     "pattern": ".+(.json$)|(.csv$)|(.tsv$)"
                 },
-                "localize": {},
-                "kwargs": {}
+                "localize": {
+                    "type": "object",
+                    "description": "localization settings"
+                },
+                "kwargs": {
+                    "properties": {
+                        "start_line": {
+                            "type": "integer",
+                            "description": "starting index of position of columnname"
+                        },
+                        "row_oriented": {
+                            "type": "boolean",
+                            "description": "if 'true'(the default) it will look for colum names in '1:1', if `false` it will look for colum names in 'A:A' "
+                        },
+                        "squeeze": {
+                            "type": "boolean",
+                            "description": "squeezes all rows of Worksheet to a singe row"
+                        },
+                        "delim": {
+                            "type": "string",
+                            "description": "a String or Regrex that of deliminator for converting single cell to array, default value is `;`"
+                        }
+                    },
+                    "additionalProperties": false
+                }
             }
         }
     }
