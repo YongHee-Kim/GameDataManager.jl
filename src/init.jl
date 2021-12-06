@@ -4,8 +4,3 @@ const CACHE = Dict{String,Any}(
         "validation" => true,
         "tables" => Dict{Symbol,Any}(),
         "tablesschema" => Dict())
-
-function setupenv()
-    println("foo")
-end
-    

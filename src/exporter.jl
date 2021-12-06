@@ -30,14 +30,9 @@ end
 
 
 """
-    export_gamedata(file::AbstractString)
-    export_gamedata(exportall::Bool = false)
+    export_xlsxtable(file::AbstractString)
 
-* file="filename.xlsx": 지정된 파일만 json으로 추출합니다
-* exportall = true    : 모든 파일을 json으로 추출합니다
-* exportall = false   : 변경된 .xlsx파일만 json으로 추출합니다
-
-mars 메인 저장소의 '.../_META.json'에 명시된 파일만 추출가능합니다
+export a given excel worsheets to a output file specified in 'config.json'
 """
 function export_xlsxtable(fname)
     println("『", fname, "』")
@@ -82,9 +77,9 @@ function write_worksheet(fname, jws::JSONWorksheet)
 end
 
 function _csv(jws::JSONWorksheet)
-    # writedlm(io, [x y])
-    colnames = map(el -> '/' * join(el.tokens, '/'), keys(jws))
-    s = join(colnames, ',') * '\n'
+    # you cannot use column name from xlsx for the type notation
+    # colnames = map(el -> '/' * join(el.tokens, '/'), keys(jws))
+    s = join(keys(jws[1]), ',') * '\n'
     for i in 1:length(jws)
         s *= join(_csv.(values(jws[i])), ',')
         if i < length(jws)
@@ -110,7 +105,12 @@ end
 
 function write_localize(fname, localizedata)
     dir = GAMEENV["LOCALIZE"]
-    io = joinpath(dir, fname)
+    io, ext = splitext(fname)
+    if ext == ".json"
+        io = fname
+    else
+        io = joinpath(dir, "$io.json")
+    end 
     modified = true
 
     newdata = JSON.json(localizedata, 2)
@@ -119,10 +119,10 @@ function write_localize(fname, localizedata)
     end
     if modified
         write(io, newdata)
-        print("⨽  SAVE => ")
+        print("  ⨽Localize => ")
         printstyled(normpath(io), "\n"; color = :blue)
     else
-        print("  ⨽  => ")
+        print("  ⨽Localize => ")
         print(normpath(io), "\n")
     end
 end
