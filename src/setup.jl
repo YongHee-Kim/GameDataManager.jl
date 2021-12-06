@@ -9,20 +9,30 @@ function init_project(path)
     
     CACHE["config"] = loadconfig()
 
+    # load juliaModule
+    if haskey(GAMEENV, "JULIAMODULE")
+        if !in(GAMEENV["JULIAMODULE"], LOAD_PATH)
+            push!(LOAD_PATH, GAMEENV["JULIAMODULE"])
+
+        end
+    end
+
     @info "\"$(CACHE["config"]["name"])\" Project has loaded successfully!"
 end
 
 function loadconfig(file = joinpath(GAMEENV["PROJECT"], "config.json"); firstrun = true)
-    configdata = JSON.parsefile(file; dicttype = OrderedDict)
+    configdata = open(file, "r") do io 
+        JSON.parse(io; dicttype=OrderedDict{String,Any})
+    end
 
     # create paths
     for (k, path) in configdata["environment"]
-        dir = joinpath(GAMEENV["PROJECT"], path) |> normpath
-        if !isdir(dir)
-            @info "$dir is created"
-            mkpath(dir)
+        fullpath = joinpath(GAMEENV["PROJECT"], path) |> normpath
+        if !isdir(fullpath)
+            @info "$fullpath is created"
+            mkpath(fullpath)
         end
-        GAMEENV[uppercase(k)] = dir 
+        GAMEENV[uppercase(k)] = fullpath 
     end
     # check if xlsx file exists 
     for (fname, sheetdata) in configdata["xlsxtables"]
@@ -34,7 +44,6 @@ function loadconfig(file = joinpath(GAMEENV["PROJECT"], "config.json"); firstrun
                 register_table(XLSXTable(file, sheetdata))
             end
         end
-
     end
 
     return configdata 
@@ -43,3 +52,4 @@ end
 function register_table(t::XLSXTable{Fname}) where Fname
     CACHE["tables"][Fname] = t
 end
+
