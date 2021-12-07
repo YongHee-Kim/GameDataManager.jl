@@ -4,7 +4,9 @@
     "environment": {
         "xlsx": "./xlsx",
         "out": "./json",
-        "localize": "./localization"
+        "localize": "./localization",
+        "jsonschema": "./jsonschema",
+        "juliaModule": "./julia"
     },
     "xlsxtables": {
         "Items.xlsx": {
@@ -23,6 +25,29 @@
                     "kwargs": {
                         "start_line": 2
                     }
+                }
+            ]
+        },
+        "TestData.xlsx": {
+            "workSheets": [
+                {
+                    "name": "ColumnOrient",
+                    "out": "TestData_Column.json",
+                    "kwargs": {
+                        "start_line": 3,
+                        "row_oriented": false
+                    }
+                },
+                {
+                    "name": "Csv",
+                    "out": "TestData_Csv.csv",
+                    "localize": {
+                        "keycolumn": "/Key"
+                    }
+                },
+                {
+                    "name": "Array",
+                    "out": "TestData_Array.csv"
                 }
             ]
         },
