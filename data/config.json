@@ -39,6 +39,19 @@
                 }
             }
         },
+        "localization": {
+            "description": "config for localization",
+            "properties": {
+                "baseLanguage": {
+                    "decription": "base language for localization",
+                    "type": "string"
+                },
+                "targetLanguage": {
+                    "description": "generate empty slot for each language to fill in",
+                    "type": "array"
+                }
+            }
+        },
         "xlsxtables": {
             "type": "object",
             "propertyNames": {

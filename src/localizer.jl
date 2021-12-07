@@ -35,16 +35,16 @@ const SPECIAL_CHAR_CONVERT = Dict('[' => "__", ']' => "__",
 일단 간단하게 키 배정
 """
 localize!(x) = x
-function localize!(data::XLSXTable)
+function localize!(tb::XLSXTable)
     # TODO: keycolum이 array일 때 혼합키로 localizekey 생성할 것
-    for s in sheetnames(data)
-        filename = data.out[s]
-        keycolumn = data.localize_key[s]
+    for s in sheetnames(tb)
+        filename = tb.out[s]
+        keycolumn = tb.localize_key[s]
         if isa(keycolumn, AbstractString)
-            data.localizedata[s] = localize!(data[s], filename, keycolumn)
+            tb.localizedata[s] = localize!(tb[s], filename, keycolumn)
         end
     end
-    return data
+    return tb
 end
 
 function localize!(jws::JSONWorksheet, filename, keycolumn::AbstractString)
@@ -56,10 +56,10 @@ function localize!(jws::JSONWorksheet, filename, keycolumn::AbstractString)
 
     target_tokens = Tuple[]
     for (i, row) in enumerate(jws)
-        localize_table!(row, ["\$gamedata.$(filename).", i], target_tokens)
+        localize_table!(row, ["\$gamedata.$(filename)", i], target_tokens)
     end
     
-    localized = OrderedDict()
+    localizedata = OrderedDict{String, Any}()
     for (token, text) in target_tokens
         if isa(keycolumn, JSONPointer.Pointer)
             keyvalues = jws[token[2]][keycolumn]
@@ -68,17 +68,18 @@ function localize!(jws::JSONWorksheet, filename, keycolumn::AbstractString)
             # uses rownumber
             finalkey = gamedata_lokalkey(token)
         end
-        if haskey(localized, finalkey)
+        if haskey(localizedata, finalkey)
             throw(AssertionError("`$finalkey`가 중복되었습니다. config.json에서 정의한 keycolumn의 값이 중복되지 않는지 확인해 주세요\n$(keycolumn) "))
         end
-        localized[finalkey] = text
+        localizedata[finalkey] = text
+
         
         row_idx = token[2]
         p1 = "/" * join(token[3:end], "/") # 원본
         p2 = replace(p1, "\$" => "") # 발급된를 $이 제거된 컬럼에 저장
         jws.data[row_idx][JSONPointer.Pointer(p2)] = finalkey
     end
-    return localized
+    return localizedata
 end
 
 # Dict의 Key가 '$'으로 시작하면 있으면 로컬라이즈 대상이다
@@ -100,13 +101,14 @@ end
 json gamedata의 Lokalise 플랫폼용 Key를 구성한다
 """
 function gamedata_lokalkey(tokens)
-    # $gamedata.(파일명)#/rowindex/(JSONPointer)"
+    # $gamedata.(파일명)#/(JSONPointer)/rowindex"
     idx = @sprintf("%04i", tokens[2]) #0000 형태
-    string(tokens[1], idx, ".",
-        replace(join(tokens[3:end], "."), "\$" => ""))
+    string(tokens[1], 
+            ".", replace(join(tokens[3:end], "."), "\$" => ""),
+            ".", idx)
 end
 function gamedata_lokalkey(tokens, keyvalues)
-    # $gamedata.(파일명)#/keycolum_values/(JSONPointer)"
+    # $gamedata.(파일명)#/(JSONPointer)/keycolum_values"
     idx = ""
     for el in keyvalues 
         if !isnull(el) && !isempty(el)
@@ -135,11 +137,10 @@ function gamedata_lokalkey(tokens, combinedkey::AbstractString)
     else 
         idx = combinedkey
     end
-    string(tokens[1], idx, ".",
-        replace(join(tokens[3:end], "."), "\$" => ""))
+    string(tokens[1], 
+        ".", replace(join(tokens[3:end], "."), "\$" => ""),
+        ".", idx)
 end
-
-
 
 localize_table!(x, token, holder) = nothing
 function localize_table!(arr::AbstractArray, token, holder)

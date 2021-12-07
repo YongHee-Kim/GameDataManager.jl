@@ -1,3 +1,4 @@
+init_project() = init_project(pwd())
 function init_project(path)
     config = joinpath(path, "config.json")
     if !isfile(config)

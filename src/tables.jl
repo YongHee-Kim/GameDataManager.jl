@@ -59,11 +59,21 @@ function loadtable(fname::Symbol)
 
     tb = CACHE["tables"][fname]
     if !isa(tb.data, JSONWorkbook)
-        kwarg_per_sheet = tb.kwargs
-        jwb = JSONWorkbook(tb.data, keys(kwarg_per_sheet), kwarg_per_sheet)
-        tb.data = jwb
-        localize!(tb)
+        loadtable!(tb)
+    else 
+        if tb.mtime != mtime(xlsxpath(tb))
+            loadtable!(tb)
+        end
     end
+    return tb
+end
+
+function loadtable!(tb::XLSXTable)
+    kwarg_per_sheet = tb.kwargs
+    jwb = JSONWorkbook(xlsxpath(tb), keys(kwarg_per_sheet), kwarg_per_sheet)
+    tb.data = jwb
+    tb.mtime = mtime(xlsxpath(tb))
+    localize!(tb)
     return tb
 end
 
@@ -77,7 +87,14 @@ _filename(xgd::XLSXTable{NAME}) where {NAME} = NAME
 
 index(x::XLSXTable) = x.data.sheetindex
 XLSXasJSON.sheetnames(xgd::XLSXTable) = sheetnames(xgd.data)
-XLSXasJSON.xlsxpath(xgd::XLSXTable) = xlsxpath(xgd.data)
+function XLSXasJSON.xlsxpath(tb::XLSXTable)::String
+    if isa(tb.data, JSONWorkbook)
+        p = xlsxpath(tb.data)
+    else 
+        p = tb.data 
+    end 
+    return p
+end
 
 function Base.show(io::IO, bt::XLSXTable)
     print(io, "XLSXTable")

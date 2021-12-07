@@ -41,9 +41,9 @@ function export_xlsxtable(fname)
     for s in sheetnames(tb)
         fname = tb.out[s]
         write_worksheet(fname, tb.data[s])
-        localize = tb.localizedata[s]
-        if !ismissing(localize)
-            write_localize(fname, localize)
+        localizedata = tb.localizedata[s]
+        if !ismissing(localizedata)
+            write_localize(fname, localizedata)
         end
     end
     nothing
@@ -104,16 +104,17 @@ function _csv(x::AbstractDict)
 end
 
 function write_localize(fname, localizedata)
-    dir = GAMEENV["LOCALIZE"]
-    io, ext = splitext(fname)
-    if ext == ".json"
-        io = fname
-    else
-        io = joinpath(dir, "$io.json")
-    end 
+    config = CACHE["config"]["localization"]
     modified = true
 
+    # TODO: proper warnning, when localization setting isn't there
+    baselanguage = get(config, "baseLanguage", "kr")
+
+    # only .json is allowed for localization data
+    io, ext = splitext(fname)
+    io = joinpath(GAMEENV["LOCALIZE"], "$(io)_$(baselanguage).json")
     newdata = JSON.json(localizedata, 2)
+
     if isfile(io)
         modified = !issamedata(read(io, String), newdata)
     end

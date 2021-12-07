@@ -8,6 +8,9 @@
         "jsonschema": "./jsonschema",
         "juliaModule": "./julia"
     },
+    "localization": {
+        "baselanguage": "kr"
+    },
     "xlsxtables": {
         "Items.xlsx": {
             "workSheets": [
