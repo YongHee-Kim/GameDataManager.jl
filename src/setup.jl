@@ -38,7 +38,7 @@ function loadconfig(file = joinpath(GAMEENV["PROJECT"], "config.json"); firstrun
     for (fname, sheetdata) in configdata["xlsxtables"]
         file = joinpath(GAMEENV["XLSX"], fname)
         if !isfile(file)
-            @warn "$file does not exist"
+            @warn "$file does not exist, checkout `config.json`"
         else  
             if firstrun 
                 register_table(XLSXTable(file, sheetdata))

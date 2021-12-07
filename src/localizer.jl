@@ -1,4 +1,4 @@
-# 단어 검출
+# Convert Special Charaters in Keys
 const SPECIAL_CHAR_CONVERT = Dict('[' => "__", ']' => "__",
                                     '{' => "__", '}' => "__",
                                     '(' => "__", ')' => "__",
