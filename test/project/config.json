@@ -5,9 +5,8 @@
         "xlsx": "./xlsx",
         "out": "./json",
         "localize": "./localization",
-        "jsonschema": "./jsonschema",
-        "juliaModule": "./julia"
-    },
+        "jsonschema": "./jsonschema"
+     },
     "localization": {
         "baselanguage": "kr"
     },
@@ -19,15 +18,14 @@
                     "out": "Items_Equipment.json",
                     "localize": {
                         "keycolumn": "/Key"
-                    }, 
-                    "kwargs": {}
+                    }
                 },
                 {
                     "name": "Consumable",
                     "out": "Items_Consumable.json",
                     "kwargs": {
                         "start_line": 2
-                    }
+                    }                    
                 }
             ]
         },
@@ -50,7 +48,22 @@
                 },
                 {
                     "name": "Array",
-                    "out": "TestData_Array.csv"
+                    "out": "TestData_Array.json"
+                },
+                {
+                    "name": "Object",
+                    "out": "TestData_Object.json"
+                }
+            ]
+        },
+        "Folder/Character.xlsx": {
+            "workSheets": [
+                {
+                    "name": "Data",
+                    "out": "Character.json",
+                    "localize": {
+                        "keycolumn": "/Key"
+                    }
                 }
             ]
         },
