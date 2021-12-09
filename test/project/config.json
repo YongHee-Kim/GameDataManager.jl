@@ -8,7 +8,7 @@
         "jsonschema": "./jsonschema"
      },
     "localization": {
-        "baselanguage": "kr"
+        "baseLanguage": "eng"
     },
     "xlsxtables": {
         "Items.xlsx": {
@@ -42,6 +42,13 @@
                 {
                     "name": "Csv",
                     "out": "TestData_Csv.csv",
+                    "localize": {
+                        "keycolumn": "/Key"
+                    }
+                },
+                {
+                    "name": "Tsv",
+                    "out": "TestData_Tsv.tsv",
                     "localize": {
                         "keycolumn": "/Key"
                     }
