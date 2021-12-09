@@ -27,8 +27,8 @@ pkg>add https://github.com/YongHee-Kim/GameDataManager.jl
 
 # 튜토리얼 
 
-## 프로젝트 설정
-**GameDataManager**를 사용학 위해서는 'config.json' 작성이 필요합니다. 
+## 1 프로젝트 설정
+**GameDataManager**를 사용을 위해서는 'config.json' 작성이 필요합니다. 
 작성 예제는 다음과 같습니다.
 ```json
 {
@@ -50,7 +50,7 @@ pkg>add https://github.com/YongHee-Kim/GameDataManager.jl
 - `jsonschema`: JSONSchema의 경로. 파일명이 out파일 동일할 경우 Schema검사를 수행합니다. 
 
       
-## 파일 변환 설정
+## 2 파일 변환 설정
 프로젝트 `name`과 `environment` 작성이 끝나면 이어서 변환할 엑셀 파일과 시트 정보를 작성합니다. 
 ```json
 ...,
@@ -83,11 +83,8 @@ pkg>add https://github.com/YongHee-Kim/GameDataManager.jl
 - `localize`: 현지화 관련 설정입니다. 값이 없으면 현지화를 하지 않습니다. 자세한 사용법은 [링크]를 참고해 주세요  
 - `kwargs`: 데이터 추출 방식에 대한 추가 설정입니다. 자세한 사용법은 [링크]를 참고해 주세요
 
-### `config.json` 예제
-- [GameDataManger Test](./test/project/config.json)
 
-
-## 프로젝트 초기화하기
+## 3 프로젝트 초기화하기
 `config.json` 작성이 끝났으니 이제 프로젝트를 초기화할 수 있습니다.  
 "config.json" 파일이 있는 경로를 복사하여 `init_project`에 붙여넣으면 됩니다.
 ```
@@ -99,19 +96,24 @@ init_project("../MyProject")
 > Julia REPL의 현재 경로가 `config.json`이 있는 폴더인 상태에서 `using GameDataManager`를 호출하면 자동으로 프로젝트를 초기화합니다.  
 > [메뉴얼](https://docs.julialang.org/en/v1/manual/getting-started/)을 참고하여 startup.jl에서 프로젝트 경로로 이동하도록 설정하거나, VSCode WorkSpace 기본 경로에 config.json을 두면 편리합니다. 
 
-## 파일 변환하기 
+## 4 *.xlsx* 파일 변환하기 
 [config.json](./test/project/config.json)의 `xlsxtables`에서 기입한 엑셀 파일명만 입력하면 데이터를 추출할 수 있습니다.
 ```julia 
 julia>xl("items")
-┌ NOTE: exporting xlsx file... ⚒
-└ ----------------------------------------------
-『items』
- SAVE => .\json\Items_Equipment.json
-  ⨽Localize => .\localization\Items_Equipment_eng.json
- SAVE => .\json\Items_Consumable.json
-[ DONE: export complete ☺
+    ┌ NOTE: exporting xlsx file... ⚒
+    └ ----------------------------------------------
+    『items』
+    SAVE => .\json\Items_Equipment.json
+    ⨽Localize => .\localization\Items_Equipment_eng.json
+    SAVE => .\json\Items_Consumable.json
+    [ DONE: export complete ☺
 ```
 혹은 아무런 인자 없이 `xl()`만 입력하면 `confing.json#/xlsxtables`에 명시된 모든 데이터를 추출합니다. 
+
+
+### `config.json` 예제
+- [GameDataManger Test](./test/project/config.json)
+
 
 
 # 추가 기능 
