@@ -25,10 +25,13 @@ function loadconfig(file = joinpath(GAMEENV["PROJECT"], "config.json"); firstrun
     configdata = open(file, "r") do io 
         JSON.parse(io; dicttype=OrderedDict{String,Any})
     end
-
     # create paths
     for (k, path) in configdata["environment"]
-        fullpath = joinpath(GAMEENV["PROJECT"], path) |> normpath
+        if isabspath(path)
+            fullpath = normpath(path)
+        else 
+            fullpath = abspath(joinpath(GAMEENV["PROJECT"], path))
+        end
         if !isdir(fullpath)
             @info "$fullpath is created"
             mkpath(fullpath)
