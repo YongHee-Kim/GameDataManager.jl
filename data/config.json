@@ -41,13 +41,14 @@
         },
         "localization": {
             "description": "config for localization",
+            "additionalProperties": false,
             "properties": {
                 "baseLanguage": {
-                    "decription": "base language for localization",
+                    "decription": "language that game datas are written by",
                     "type": "string"
                 },
                 "targetLanguage": {
-                    "description": "generate empty slot for each language to fill in",
+                    "description": "array of languages for localization",
                     "type": "array"
                 }
             }

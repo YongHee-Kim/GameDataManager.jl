@@ -32,11 +32,11 @@ const SPECIAL_CHAR_CONVERT = Dict('[' => "__", ']' => "__",
 """
     localizer!
 
-일단 간단하게 키 배정
+
 """
 localize!(x) = x
 function localize!(tb::XLSXTable)
-    # TODO: keycolum이 array일 때 혼합키로 localizekey 생성할 것
+    # TODO: allow use of combined key
     for s in sheetnames(tb)
         filename = tb.out[s]
         keycolumn = tb.localize_key[s]
@@ -49,7 +49,6 @@ end
 
 function localize!(jws::JSONWorksheet, filename, keycolumn::AbstractString)
     filename = splitext(filename)[1] 
-    # _Meta에 정의된 keycolumn을 Pointer로 전환 
     if !isempty(keycolumn)
         keycolumn = JSONPointer.Pointer(keycolumn)
     end
@@ -98,17 +97,17 @@ end
     gamedata_lokalisekey(tokens)
     gamedata_lokalisekey(tokens, keyvalues)
 
-json gamedata의 Lokalise 플랫폼용 Key를 구성한다
+generate localization key from JSONPointer token
 """
 function gamedata_lokalkey(tokens)
-    # $gamedata.(파일명)#/(JSONPointer)/rowindex"
+    # $gamedata.(FileName)#/(JSONPointer)/rowindex"
     idx = @sprintf("%04i", tokens[2]) #0000 형태
     string(tokens[1], 
             ".", replace(join(tokens[3:end], "."), "\$" => ""),
             ".", idx)
 end
 function gamedata_lokalkey(tokens, keyvalues)
-    # $gamedata.(파일명)#/(JSONPointer)/keycolum_values"
+    # $gamedata.(FileName)#/(JSONPointer)/keycolum_values"
     idx = ""
     for el in keyvalues 
         if !isnull(el) && !isempty(el)
@@ -122,8 +121,8 @@ function gamedata_lokalkey(tokens, keyvalues)
     gamedata_lokalkey(tokens, idx)
 end
 function gamedata_lokalkey(tokens, combinedkey::AbstractString)
-    # $gamedata.(파일명)#/keycolum_values/(JSONPointer)"
-    # lokalise에서 XML로 빌드하면 .과 _를 제외한 특수문자를 잘라먹기 때문에 어쩔 수 없이 전부 _로 전환 
+    # $gamedata.(FileName)#/keycolum_values/(JSONPointer)"
+    # some localization services won't allow special characters except "." and "_" 
     REG_NOTWORD = r"[^A-Za-z0-9ㄱ-ㅎㅏ-ㅣ가-힣]"
     if occursin(REG_NOTWORD, combinedkey)
         idx = ""
