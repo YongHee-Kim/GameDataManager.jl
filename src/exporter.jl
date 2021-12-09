@@ -56,7 +56,9 @@ function write_worksheet(fname, jws::JSONWorksheet)
     if ext == ".json"
         newdata = JSON.json(jws.data, 2)
     elseif ext == ".csv"
-        newdata = _csv(jws)
+        newdata = delimit(jws, ',')
+    elseif ext == ".tsv"
+        newdata = delimit(jws, '\t')
     else 
         throw(ArgumentError("\"$ext\" file type is not supported, use \".json\" or \".csv\""))
     end
@@ -76,12 +78,12 @@ function write_worksheet(fname, jws::JSONWorksheet)
     end
 end
 
-function _csv(jws::JSONWorksheet)
+function delimit(jws::JSONWorksheet, delim)
     # you cannot use column name from xlsx for the type notation
     # colnames = map(el -> '/' * join(el.tokens, '/'), keys(jws))
-    s = join(keys(jws[1]), ',') * '\n'
+    s = join(keys(jws[1]), delim) * '\n'
     for i in 1:length(jws)
-        s *= join(_csv.(values(jws[i])), ',')
+        s *= join(map(el -> delimit(el, delim), values(jws[i])), delim)
         if i < length(jws)
             s *= '\n'
         end
@@ -89,15 +91,20 @@ function _csv(jws::JSONWorksheet)
     return s
 end
 
-_csv(x) = string(x)
-_csv(x::Missing) = ""
-_csv(x::Nothing) = ""
-_csv(x::AbstractString) = x
-_csv(x::AbstractArray) = "[" * join(x, ";") * "]"
-function _csv(x::AbstractDict) 
+delimit(x, delim) = string(x)
+delimit(x::Missing, delim) = ""
+delimit(x::Nothing, delim) = ""
+delimit(x::AbstractString, delim) = x
+function delimit(x::AbstractArray, delim) 
+    "[" * join(x, ';') * "]"
+end
+function delimit(x::AbstractDict, delim) 
     s = "{"
-    for (k, v) in x 
-        s *= "\"$k\":" * _csv(v)
+    for (i, (k, v)) in enumerate(x) 
+        s *= "\"$k\":" * delimit(v, delim)
+        if i < length(x)
+            s*=";"
+        end
     end
     s *= "}"
     return s 
