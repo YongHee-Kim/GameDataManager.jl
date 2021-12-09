@@ -39,6 +39,22 @@ pkg>add https://github.com/YongHee-Kim/GameDataManager.jl
         "localize": "./localization",
         "jsonschema": "./jsonschema"
     },
+    ...
+}
+```
+`name`: 프로젝트의 이름입니다.  
+`environment`: 데이터 원본 경로, 추출된 데이터의 경로등을 기입합니다. 
+- `xlsx`: 엑셀 파일의 경로
+- `out`: 변환된 데이터 파일의 경로   
+- `localize`: 현지화 데이터의 경로   
+- `jsonschema`: JSONSchema의 경로. 파일명이 out파일 동일할 경우 Schema검사를 수행합니다. 
+
+      
+## 파일 변환 설정
+프로젝트 `name`과 `environment` 작성이 끝나면 이어서 변환할 엑셀 파일과 시트 정보를 작성합니다. 
+```json
+...,
+{
     "xlsxtables": {
         "Items.xlsx": {
             "workSheets": [
@@ -61,30 +77,44 @@ pkg>add https://github.com/YongHee-Kim/GameDataManager.jl
     }
 }
 ```
+`xlsxtables`: 각각의 xlsx 파일에 대한 시트별 추출 설정입니다.
+- `name`: 엑셀 시트의 이름입니다.  
+- `out`: 추출할 파일명입니다. `.json`, `.csv`, `.tsv`를 사용할 수 있습니다.  
+- `localize`: 현지화 관련 설정입니다. 값이 없으면 현지화를 하지 않습니다. 자세한 사용법은 [링크]를 참고해 주세요  
+- `kwargs`: 데이터 추출 방식에 대한 추가 설정입니다. 자세한 사용법은 [링크]를 참고해 주세요
 
-`name`: 프로젝트의 이름입니다.  
-`environment`: 데이터 원본 경로, 추출된 데이터의 경로등을 기입합니다. `config.json`에 대한 상대 경로로 인식합니다.  
->`xlsx`: 엑셀 파일의 경로  
->`out`: 변환된 데이터 파일의 경로   
->`localize`: 현지화 데이터의 경로   
->`jsonschema`: JSONSchema의 경로, 파일명이 out파일 동일할 경우 Schema검사를 수행합니다 
-      
-`xlsxtables`: 각각의 xlsx 파일에 대한 시트별 추출 설정입니다   
-> `name`: 엑셀 시트의 이름입니다  
-> `out`: 추출할 파일명입니다. `.json`, `.csv`, `.tsv`를 사용할 수 있습니다  
-> `localize`: 현지화 관련 설정입니다. 값이 없으면 현지화를 하지 않습니다. 자세한 내용은 [링크]를 참고해 주세요  
-> `kwargs`: 데이터 추출 방식에 대한 추가 설정입니다. 자세한 내용은 [링크]를 참고해 주세요
-
-## 
-로딩
-
-### Config.json 예제 모음
+### `config.json` 예제
+- [GameDataManger Test](./test/project/config.json)
 
 
-## Export Settings
+## 프로젝트 초기화하기
+`config.json` 작성이 끝났으니 이제 프로젝트를 초기화할 수 있습니다.  
+"config.json" 파일이 있는 경로를 복사하여 `init_project`에 붙여넣으면 됩니다.
+```
+using GameDataManager
+init_project("../MyProject")
+```
+
+!!! note
+> Julia REPL의 현재 경로가 `config.json`이 있는 폴더인 상태에서 `using GameDataManager`를 호출하면 자동으로 프로젝트를 초기화합니다.  
+> [메뉴얼](https://docs.julialang.org/en/v1/manual/getting-started/)을 참고하여 startup.jl에서 프로젝트 경로로 이동하도록 설정하거나, VSCode WorkSpace 기본 경로에 config.json을 두면 편리합니다. 
+
+## 파일 변환하기 
+[config.json](./test/project/config.json)의 `xlsxtables`에서 기입한 엑셀 파일명만 입력하면 데이터를 추출할 수 있습니다.
+```julia 
+julia>xl("items")
+┌ NOTE: exporting xlsx file... ⚒
+└ ----------------------------------------------
+『items』
+ SAVE => .\json\Items_Equipment.json
+  ⨽Localize => .\localization\Items_Equipment_eng.json
+ SAVE => .\json\Items_Consumable.json
+[ DONE: export complete ☺
+```
+혹은 아무런 인자 없이 `xl()`만 입력하면 `confing.json#/xlsxtables`에 명시된 모든 데이터를 추출합니다. 
 
 
-# Additional Features 
+# 추가 기능 
 
 ## Export kwargs  
 
