@@ -1,29 +1,29 @@
 function xl(exportall::Bool = false)
     files = keys(CACHE["tables"])
     if isempty(files)
-        print_section("추출할 파일이 없습니다."; color=:yellow)
+        print_section("nothing to export."; color=:yellow)
     else
         print_section(
-            "xlsx -> json 추출을 시작합니다 ⚒\n" * "-"^(displaysize(stdout)[2] - 4);
+            "exporting xlsx files... ⚒\n" * "-"^(displaysize(stdout)[2] - 4);
             color = :cyan,
         )
         for f in files
             try
                 export_xlsxtable(f)
             catch e
-                printstyled("$f 데이터 추출 실패\n"; color = :red)
+                printstyled("$f export failed\n"; color = :red)
             end
         end
-        print_section("데이터 추출이 완료되었습니다 ☺", "DONE"; color = :cyan)
+        print_section("$(length(files)) xlsx files are exported ☺", "DONE"; color = :cyan)
     end
 end
-function xl(file)
+function xl(fname)
     print_section(
-        "xlsx -> json 추출을 시작합니다 ⚒\n" * "-"^(displaysize(stdout)[2] - 4);
+        "exporting xlsx file... ⚒\n" * "-"^(displaysize(stdout)[2] - 4);
         color = :cyan,
     )
-    export_xlsxtable(file)
-    print_section("json 추출이 완료되었습니다 ☺", "DONE"; color = :cyan)
+    export_xlsxtable(fname)
+    print_section("export complete ☺", "DONE"; color = :cyan)
 
     nothing
 end
