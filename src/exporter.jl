@@ -54,7 +54,7 @@ function write_worksheet(fname, jws::JSONWorksheet)
     io = joinpath(dir, fname)
     ext = splitext(fname)[2]
     if ext == ".json"
-        newdata = JSON.json(jws.data, 2)
+        newdata = JSON.json(jws, 2)
     elseif ext == ".csv"
         newdata = delimit(jws, ',')
     elseif ext == ".tsv"

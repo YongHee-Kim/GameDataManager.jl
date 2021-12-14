@@ -21,10 +21,8 @@ function init_project(path)
     @info "\"$(CACHE["config"]["name"])\" Project has loaded successfully!"
 end
 
-function loadconfig(file = joinpath(GAMEENV["PROJECT"], "config.json"); firstrun = true)
-    configdata = open(file, "r") do io 
-        JSON.parse(io; dicttype=OrderedDict{String,Any})
-    end
+function loadconfig(file = joinpath(GAMEENV["PROJECT"], "config.json"))
+    configdata = JSON.parsefile(file; dicttype=OrderedDict{String,Any}, use_mmap=false)
     # create paths
     for (k, path) in configdata["environment"]
         if isabspath(path)
@@ -44,16 +42,14 @@ function loadconfig(file = joinpath(GAMEENV["PROJECT"], "config.json"); firstrun
         if !isfile(file)
             @warn "$file does not exist, checkout `config.json`"
         else  
-            if firstrun 
-                register_table(XLSXTable(file, sheetdata))
-            end
+            register_table!(XLSXTable(file, sheetdata))
         end
     end
 
     return configdata 
 end
 
-function register_table(t::XLSXTable{Fname}) where Fname
-    CACHE["tables"][Fname] = t
+function register_table!(tb::XLSXTable{fname}) where fname
+    CACHE["tables"][fname] = tb
 end
 

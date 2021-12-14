@@ -9,9 +9,7 @@ import GameDataManager.GAMEENV
 project_path = joinpath(@__DIR__, "project")
 
 @testset "Project Setting" begin 
-    @test !isdir("$(project_path)/json")
     init_project(project_path)
-
     @test isdir("$(project_path)/json")
 end
 
@@ -94,5 +92,4 @@ end
     #         end
     #     end
     #  end
-
 end

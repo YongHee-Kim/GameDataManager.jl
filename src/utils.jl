@@ -49,12 +49,13 @@ function throw_fuzzylookupname(keyset, idx; kwargs...)
     throw_fuzzylookupname(collect(keyset), idx; kwargs...)
 end
 
-function throw_fuzzylookupname(names::AbstractArray, idx::AbstractString; msg="'$(idx)'를 찾을 수 없습니다.")
+function throw_fuzzylookupname(names::AbstractArray, idx::AbstractString; 
+                                msg="'$idx' not found")
     l = Dict{AbstractString,Int}(zip(names, eachindex(names)))
     candidates = XLSXasJSON.fuzzymatch(l, idx)
     if isempty(candidates)
         throw(ArgumentError(msg))
     end
     candidatesstr = join(string.("\"", candidates, "\""), ", ", " and ")
-    throw(ArgumentError(msg * "\n혹시? $candidatesstr"))
+    throw(ArgumentError(msg * "\nexisting most similar names are: $candidatesstr"))
 end

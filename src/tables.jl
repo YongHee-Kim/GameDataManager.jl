@@ -6,23 +6,30 @@ wrapper around JSONWorkbook
 mutable struct XLSXTable{FileName}
     data::Union{JSONWorkbook, String}
     localizedata::Dict{String, Any}
-    mtime
     out::Dict{String, String} # output filename
+    schema::Dict{String, Any} # JSONSchema per sheet
     localize_key::Dict{String, Any}
     kwargs::Dict{String, Any}
+    mtime::Float64
 end
 function XLSXTable(file, config)
     FileName = splitext(basename(file))[1] |> Symbol
 
     out = Dict{String, String}()
+    schema = Dict{String, Any}()
     localize_key = Dict{String, Any}()
     localizedata = Dict{String, Any}()
     kwargs = Dict{String, Any}()
 
     for row in config["workSheets"]
-        name = row["name"]
-        out[name] = row["out"]
-        localize_key[name] = begin 
+        sheetname = row["name"]
+        out[sheetname] = row["out"]
+        kwargs[sheetname] = begin 
+            haskey(row, "kwargs") ? namedtuple(row["kwargs"]) : namedtuple(Dict{String,Any}())
+        end
+
+        # localizer 
+        localize_key[sheetname] = begin 
             loc = get(row, "localize", missing) 
             # default: uses row number for localize key 
             if !ismissing(loc)
@@ -30,14 +37,22 @@ function XLSXTable(file, config)
             end
             loc 
         end
-        kwargs[name] = if haskey(row, "kwargs")
-                namedtuple(row["kwargs"])
-            else 
-                namedtuple(Dict{String,Any}())
-            end
-        localizedata[name] = missing
+        localizedata[sheetname] = missing
+        # JSONSchema 
+        schema[sheetname] = lookfor_jsonschema(row["out"])
     end
-    XLSXTable{FileName}(file, localizedata, missing, out, localize_key, kwargs)
+    XLSXTable{FileName}(file, localizedata, out, schema, localize_key, kwargs, 0.)
+end
+
+function lookfor_jsonschema(filename)
+    schema = missing
+    if endswith(filename, ".json")
+        schemafile = joinpath(GAMEENV["JSONSCHEMA"], filename)
+        if isfile(schemafile)
+            schema = Schema(schemafile)
+        end
+    end
+    return schema
 end
 
 
@@ -56,30 +71,36 @@ function loadtable(fname::Symbol)
             end
         end
     end
-
     tb = CACHE["tables"][fname]
-    if !isa(tb.data, JSONWorkbook)
-        loadtable!(tb)
-    else 
-        if tb.mtime != mtime(xlsxpath(tb))
-            loadtable!(tb)
-        end
+    if ismodified(tb)
+        loaddata!(tb)
     end
     return tb
 end
 
-function loadtable!(tb::XLSXTable)
+function loaddata!(tb::XLSXTable)
     kwarg_per_sheet = tb.kwargs
-    jwb = JSONWorkbook(xlsxpath(tb), keys(kwarg_per_sheet), kwarg_per_sheet)
-    tb.data = jwb
+    tb.data = JSONWorkbook(xlsxpath(tb), keys(kwarg_per_sheet), kwarg_per_sheet)
     tb.mtime = mtime(xlsxpath(tb))
     localize!(tb)
     return tb
 end
 
-
+isloaded(tb::XLSXTable) = isa(tb.data, JSONWorkbook)
+function ismodified(tb::XLSXTable)
+    if isloaded(tb)
+        return tb.mtime != mtime(xlsxpath(tb))
+    else 
+        return true 
+    end
+end
 # fallback function
-Base.getindex(bt::XLSXTable, i) = getindex(bt.data, i)
+function Base.getindex(tb::XLSXTable, i) 
+    if !isloaded(tb)
+        loaddata!(tb)
+    end
+    getindex(tb.data, i)
+end
 
 Base.basename(xgd::XLSXTable) = basename(xlsxpath(xgd))
 Base.dirname(xgd::XLSXTable) = dirname(xlsxpath(xgd))
@@ -95,6 +116,10 @@ function XLSXasJSON.xlsxpath(tb::XLSXTable)::String
     end 
     return p
 end
+
+JSON.json(jws::JSONWorksheet, indent) = JSON.json(jws.data, indent)
+JSON.json(jws::JSONWorksheet) = JSON.json(jws.data)
+
 
 function Base.show(io::IO, bt::XLSXTable)
     print(io, "XLSXTable")
