@@ -1,15 +1,15 @@
 module GameDataManager
 
 using Printf
-using DelimitedFiles
+using REPL
 using JSON, JSONPointer, JSONSchema
 using XLSXasJSON
 using OrderedCollections
-using SQLite, Tables
 
 export init_project, xl
 
 
+include("metadata.jl")
 include("tables.jl")
 include("init.jl")
 include("setup.jl")

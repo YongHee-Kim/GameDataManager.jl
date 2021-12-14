@@ -1,30 +1,3 @@
-"""
-    Schema
-
-Thin wrapper around JSONSchema.Schema to store `filepath` and `mtime`  
-"""
-mutable struct Schema
-    filepath::AbstractString
-    schema::Union{Missing, JSONSchema.Schema}
-    mtime::Float64 
-end
-function Schema(file)
-    Schema(file, missing, 0.)
-end
-
-isloaded(x::Schema) = isa(x.schema, JSONSchema.Schema)
-function ismodified(x::Schema)
-    if isloaded(x)
-        return x.mtime != mtime(x.filepath)
-    else 
-        return true 
-    end
-end
-function loaddata!(x::Schema)
-    x.schema = JSONSchema.Schema(JSON.parsefile(x.filepath; use_mmap=false))
-    # x.mtime = mtime(x.filepath)
-    return x
-end
 
 """
     validate(bt::XLSXTable)
@@ -57,7 +30,7 @@ function validate(tb::XLSXTable, sheet)
     return []
 end
 
-function validate(jws::JSONWorksheet, schema::Schema)    
+function validate(jws::JSONWorksheet, schema::SchemaData)    
     err = OrderedDict()
     @inbounds for (i, row) in enumerate(jws)
         val = JSONSchema.validate(row, schema.schema)
@@ -118,7 +91,7 @@ function get_schema_description(tb::XLSXTable, sheet, path)
     schema = tb.schema[sheet]
     desc = get_schema_description(schema, path)
 end
-function get_schema_description(schema::Schema, path)
+function get_schema_description(schema::SchemaData, path)
     d = get_schemaelement(schema.schema, path)
     if isa(d, AbstractDict)
         get(d, "description", missing)

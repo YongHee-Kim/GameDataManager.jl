@@ -62,8 +62,8 @@ end
 end 
 
 @testset "Export to CSV, TSV" begin
+    dir = GAMEENV["OUT"]
     csvdata = readdlm(joinpath(dir, "TestData_Csv.csv"), ',')
-    @test size(csvdata)
     @test csvdata[2, 3] == "[Str;50]"
     @test csvdata[2, 4] == "{\"Value1\":Apple;\"Value2\":Grape}"
     
