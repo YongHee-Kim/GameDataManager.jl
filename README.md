@@ -39,6 +39,7 @@ We need create 'config.json' with basic informations about the project.
     ...
 }
 ```
+
 `name`: Name of the project.  
 `environment`: Path informations. You can either use absolute path or relative path from `.config.json`.
 - `xlsx`: Root path for `.xlsx`&`.xlsm`.
@@ -72,13 +73,14 @@ Convert setting for each workbook. You need to specify each worksheet for covers
         }
     }
 }
+```
 `xlsxtables`: Convert setting per `.xlsx` file. 
 - `name`: Name of the worksheet
 - `out`: Name of the converted file. You can use any of `.json`, `.csv` or `.tsv`  
 - `localize`: Specify key column for localizer to use. See [WIP] for more information.
 - `kwargs`: Extra setting for data conversion. See [WIP] for more information.
 
-```
+
 
 
 ## 3 Initialize
