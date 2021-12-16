@@ -11,16 +11,17 @@ project_path = joinpath(@__DIR__, "project")
 @testset "Project Setting" begin 
     init_project(project_path)
     @test isdir("$(project_path)/json")
+    @test isdir("$(project_path)/localization")
 end
 
 @testset "Read XLSXTable" begin 
-    jwb = GameDataManager.loadtable("Items")
-    jwb2 = GameDataManager.loadtable("items")
+    tb = GameDataManager.loadtable("Items")
+    tb2 = GameDataManager.loadtable("items")
     # jwb3 = GameDataManager.loadtable("items.xlsx")
-    @test jwb == jwb2
-    @test basename(jwb) == "Items.xlsx"
-    @test normpath(dirname(jwb)) == normpath(joinpath(project_path, "xlsx"))
-    @test GameDataManager.sheetnames(jwb) == ["Equipment", "Consumable"]
+    @test tb == tb2
+    @test basename(tb) == "Items.xlsx"
+    @test normpath(dirname(tb)) == normpath(joinpath(project_path, "xlsx"))
+    @test GameDataManager.sheetnames(tb) == ["Equipment", "Consumable"]
 end
 
 @testset "Export to JSON" begin 
@@ -93,3 +94,9 @@ end
     #     end
     #  end
 end
+
+
+# @testset "JSONSchema validation" begin 
+#     tb = GameDataManager.loadtable("Items")
+#     GameDataManager.validate(tb, "Equipment")
+# end

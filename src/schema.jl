@@ -20,11 +20,9 @@ function validate(tb::XLSXTable)
 end
 
 function validate(tb::XLSXTable, sheet)
-    schema = tb.schema[sheet]
+    schema = tb.schemas[sheet]
     if !ismissing(schema)
-        if ismodified(schema) 
-            loaddata!(schema)
-        end
+        update!(schema)
         return validate(tb[sheet], schema)
     end 
     return []
@@ -33,7 +31,7 @@ end
 function validate(jws::JSONWorksheet, schema::SchemaData)    
     err = OrderedDict()
     @inbounds for (i, row) in enumerate(jws)
-        val = JSONSchema.validate(row, schema.schema)
+        val = JSONSchema.validate(row, schema.data)
         if !isnothing(val)
             marker = "$i"
             err[marker] = val
@@ -88,11 +86,11 @@ function pretty_schemaerror(tb::XLSXTable, sheet, err::AbstractDict)
 end
 
 function get_schema_description(tb::XLSXTable, sheet, path)
-    schema = tb.schema[sheet]
+    schema = tb.schemas[sheet]
     desc = get_schema_description(schema, path)
 end
 function get_schema_description(schema::SchemaData, path)
-    d = get_schemaelement(schema.schema, path)
+    d = get_schemaelement(schema.data, path)
     if isa(d, AbstractDict)
         get(d, "description", missing)
     else 

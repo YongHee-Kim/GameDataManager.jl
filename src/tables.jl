@@ -29,14 +29,7 @@ function loadtable(fname::Symbol)
 end
 
 
-
 # fallback function
-function Base.getindex(tb::XLSXTable, i) 
-    if !isloaded(tb)
-        loaddata!(tb)
-    end
-    getindex(tb.data, i)
-end
 Base.basename(xgd::XLSXTable) = basename(xlsxpath(xgd))
 Base.dirname(xgd::XLSXTable) = dirname(xlsxpath(xgd))
 filepath(tb::XLSXTable) = xlsxpath(tb)
@@ -59,9 +52,14 @@ JSON.json(jws::JSONWorksheet) = JSON.json(jws.data)
 
 
 function Base.show(io::IO, bt::XLSXTable)
-    print(io, "XLSXTable")
+    println(io, "XLSXTable")
+    sheets = sheetnames(bt)
+    outfiles = collect(values(bt.out))
+    schemas = .!(ismissing.(values(bt.schemas)))
     if isa(bt.data, JSONWorkbook)
-        print(io, " - ", bt.data)
+        # print(io, " - ", bt.data)
+        pretty_table(io, hcat(1:length(sheets), sheets, outfiles, schemas); header = ["Idx", "Sheet", "Out", "Schema"], alignment=:l, 
+        tf = tf_markdown, header_crayon = crayon"bold green")
     else 
         f = replace(bt.data, GAMEENV["XLSX"] => "...") 
         print(io, "(\"", f, "\")")

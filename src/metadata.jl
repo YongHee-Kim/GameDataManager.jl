@@ -1,11 +1,11 @@
 """
     AbstractMetaData
 
-Thin wrapper for data to store cache and modified time
-
-
+Thin wrapper for data to store cache and 'mtime' for of the file 
 """
 abstract type AbstractMetaData end 
+
+Base.getindex(x::AbstractMetaData, i) = getindex(x.data, i)
 
 filepath(x::AbstractMetaData) = x.filepath
 
@@ -19,24 +19,71 @@ function ismodified(x::AbstractMetaData)
         return true 
     end
 end
-
+function update!(x::AbstractMetaData)
+    if ismodified(x)
+        loaddata!(x)
+    end
+    return x
+end
 
 mutable struct ConfigData <: AbstractMetaData
     filepath::AbstractString
     data::Union{Missing, AbstractDict}
     mtime::Float64 
 end
+function ConfigData(file)
+    x = ConfigData(file, missing, 0.)
+    if !isfile(file)
+        throw(SystemError(file, 2))
+    end
+    loaddata!(x)
+    return x
+end
+
+function ismodified(x::ConfigData)
+    x.mtime != mtime(filepath(x))
+end
+
+function loaddata!(x::ConfigData)
+    x.data = JSON.parsefile(filepath(x); dicttype=OrderedDict{String,Any}, use_mmap=false)
+
+    # create environment paths
+    for (k, path) in x.data["environment"]
+        if isabspath(path)
+            fullpath = normpath(path)
+        else 
+            fullpath = abspath(joinpath(GAMEENV["PROJECT"], path))
+        end
+        if !isdir(fullpath)
+            @info "$fullpath is created"
+            mkpath(fullpath)
+        end
+        GAMEENV[uppercase(k)] = fullpath 
+    end
+    # check if xlsx file exists 
+    for (fname, sheetdata) in x.data["xlsxtables"]
+        file = joinpath(GAMEENV["XLSX"], fname)
+        if !isfile(file)
+            @warn "$file does not exist, please insert a valid path in `config.json`"
+        else  
+            register_table!(XLSXTable(file, sheetdata))
+        end
+    end
+    
+    return x
+end
+
 
 mutable struct SchemaData <: AbstractMetaData
     filepath::AbstractString
-    schema::Union{Missing, JSONSchema.Schema}
+    data::Union{Missing, JSONSchema.Schema}
     mtime::Float64 
 end
 function SchemaData(file)
     SchemaData(file, missing, 0.)
 end
 function loaddata!(x::SchemaData)
-    x.schema = JSONSchema.Schema(JSON.parsefile(x.filepath; use_mmap=false))
+    x.data = JSONSchema.Schema(JSON.parsefile(x.filepath; use_mmap=false))
     x.mtime = mtime(x.filepath)
     return x
 end
@@ -51,7 +98,7 @@ mutable struct XLSXTable{FileName} <: AbstractMetaData
     data::Union{JSONWorkbook, String}
     localizedata::Dict{String, Any}
     out::Dict{String, String} # output filename
-    schema::Dict{String, Any} # JSONSchema per sheet
+    schemas::Dict{String, Any} # JSONSchema per sheet
     localize_key::Dict{String, Any}
     kwargs::Dict{String, Any}
     mtime::Float64
@@ -96,4 +143,11 @@ function loaddata!(tb::XLSXTable)
         localize!(tb)
     end
     return tb
+end
+
+function Base.getindex(tb::XLSXTable, i) 
+    if !isloaded(tb)
+        loaddata!(tb)
+    end
+    getindex(tb.data, i)
 end

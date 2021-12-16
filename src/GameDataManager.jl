@@ -5,6 +5,7 @@ using REPL
 using JSON, JSONPointer, JSONSchema
 using XLSXasJSON
 using OrderedCollections
+using PrettyTables
 
 export init_project, xl
 

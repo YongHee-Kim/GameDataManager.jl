@@ -8,17 +8,16 @@ function init_project(path)
     GAMEENV["PROJECT"] = path
     GAMEENV["CONFIG"] = config 
     
-    CACHE["config"] = loadconfig()
+    CACHE["config"] = ConfigData(joinpath(GAMEENV["PROJECT"], "config.json"))
 
-    # load juliaModule
+    # Game specific JuliaModule implementation 
     if haskey(GAMEENV, "JULIAMODULE")
         if !in(GAMEENV["JULIAMODULE"], LOAD_PATH)
             push!(LOAD_PATH, GAMEENV["JULIAMODULE"])
-
         end
     end
 
-    @info "\"$(CACHE["config"]["name"])\" Project has loaded successfully!"
+    # @info "\"$(CACHE["config"]["name"])\" Project has loaded successfully!"
 end
 
 function loadconfig(file = joinpath(GAMEENV["PROJECT"], "config.json"))

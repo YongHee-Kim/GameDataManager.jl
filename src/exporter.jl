@@ -1,4 +1,6 @@
 function xl(exportall::Bool = false)
+    update!(CACHE["config"])
+
     files = keys(CACHE["tables"])
     if isempty(files)
         print_section("nothing to export."; color=:yellow)
@@ -18,6 +20,8 @@ function xl(exportall::Bool = false)
     end
 end
 function xl(fname)
+    update!(CACHE["config"])
+
     print_section(
         "exporting xlsx file... ⚒\n" * "-"^(displaysize(stdout)[2] - 4);
         color = :cyan,
