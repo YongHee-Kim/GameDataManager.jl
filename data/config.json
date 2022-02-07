@@ -18,8 +18,7 @@
             "description": "relative paths from project root, those will be sotred in 'GAMEENV'",
             "required": [
                 "xlsx",
-                "out",
-                "localize"
+                "out"
             ],
             "properties": {
                 "xlsx": {
@@ -32,7 +31,7 @@
                     "description": "root path for localization data"
                 },
                 "jsonschema": {
-                    "description": "(optional)root path for json schema for datas"
+                    "description": "(optional)root path for json schema for data validation"
                 },
                 "juliaModule": {
                     "description": "(optional)Julia module for your project, name of module should be same as the name of project"
