@@ -63,6 +63,7 @@
                     "description": "name of excel file",
                     "properties": {
                         "workSheets": {
+                            "minItems": 1,
                             "description": "configuration for each worksheet",
                             "items": {
                                 "$ref": "#/definitions/workSheetsItem"
