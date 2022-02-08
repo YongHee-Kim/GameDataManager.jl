@@ -10,7 +10,8 @@ using PrettyTables
 export init_project, xl
 
 
-include("metadata.jl")
+include("abstractmeta.jl")
+include("config.jl")
 include("tables.jl")
 include("init.jl")
 include("setup.jl")

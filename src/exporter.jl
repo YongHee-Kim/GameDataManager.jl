@@ -1,7 +1,7 @@
 function xl(exportall::Bool = false)
     update!(CACHE["config"])
 
-    files = keys(CACHE["tables"])
+    files = xlsxfilenames(CACHE["config"])
     if isempty(files)
         print_section("nothing to export."; color=:yellow)
     else
