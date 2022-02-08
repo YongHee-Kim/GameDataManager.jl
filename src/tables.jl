@@ -1,11 +1,20 @@
+abstract type Table <: AbstractMetaData end
 
+""" 
+    Table()
+
+general interface to accessing the gamedata.  
+"""
+function Table(fname)
+    loadtable(fname)
+end
 
 """
     XLSXTable
 
 wrapper around JSONWorkbook 
 """
-mutable struct XLSXTable{FileName} <: AbstractMetaData
+mutable struct XLSXTable{FileName} <: Table
     data::Union{JSONWorkbook, String}
     localizedata::Dict{String, Any}
     out::Dict{String, String} # output filename
@@ -47,14 +56,7 @@ function XLSXTable(file, config)
 end
 
 
-# function XLSXTable(fname, config::ConfigData = CACHE["config"])
-
-# end
-
-
-function isloaded(x::XLSXTable) 
-    isa(x.data, JSONWorkbook)
-end
+isloaded(x::XLSXTable) = isa(x.data, JSONWorkbook)
 
 function loaddata!(tb::XLSXTable)
     if ismodified(tb)
@@ -72,7 +74,6 @@ function Base.getindex(tb::XLSXTable, i)
     end
     getindex(tb.data, i)
 end
-
 
 function lookfor_jsonschema(filename)
     schema = missing
@@ -111,21 +112,25 @@ end
 # fallback function
 Base.basename(xgd::XLSXTable) = basename(xlsxpath(xgd))
 Base.dirname(xgd::XLSXTable) = dirname(xlsxpath(xgd))
-filepath(tb::XLSXTable) = xlsxpath(tb)
 
 _filename(xgd::XLSXTable{NAME}) where {NAME} = NAME
 
-index(x::XLSXTable) = x.data.sheetindex
+function index(x::XLSXTable) 
+    if isloaded(tb) 
+        x.data.sheetindex
+    else 
+        throw(AssertionError("xlsx data is not loaded"))
+    end
+end
 function XLSXasJSON.sheetnames(xgd::XLSXTable)
     collect(keys(xgd.out))
 end
 function XLSXasJSON.xlsxpath(tb::XLSXTable)::String
-    if isa(tb.data, JSONWorkbook)
-        p = xlsxpath(tb.data)
+    if isloaded(tb)
+        xlsxpath(tb.data)
     else 
-        p = tb.data 
+        tb.data 
     end 
-    return p
 end
 
 
