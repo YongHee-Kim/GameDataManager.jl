@@ -5,8 +5,8 @@ Easy and convenient toolkit for game designers to help manage data tables
 GameDataManager wouldn't have been possible without the endorsement from [Devsisters](https://www.devsisters.com) to open source the inhouse tool of the [same name](https://github.com/devsisters/GameDataManager.jl). 
 
 # Introduction 
-Game industries have seen lots of innovation and technological advancement. But only the game design department was fell behind such innovations. Artists won't be able to use graphics programs from 20 years ago, and software engineers won't be able to use IDE and library from 20 years ago. But not the game designers. We can use Excel 2003 with little or no trouble because the tools game designers use didn't change much over the decades. Game designers spend most of their working hours wrestling with data. They have to architect the relationship between data and calculate possible outcomes of the interaction between players and data. And the rise of free-to-play games makes things even harder for game designers. 
-Unfortunately, game designers spend too much time managing and validating the data and can't afford enough time to do the actual design. This is where **GameDataManager** comes in. It is designed to improve the productivity of game designers by providing necessary and convenient tools for automation and data wrangling capability. 
+Game industries have seen lots of innovation and technological advancement. But only the game design department was fell behind such innovations. Artists and software engineers won't be able to tools from 20 years ago. But not the game designers. We can use Excel 2003 with little or no trouble because the tools game designers use didn't change much over the decades. Game designers spend most of their working hours wrestling with data. They have to architect the relationship between data and calculate possible outcomes of the interaction between players and data. And [GAAS](https://en.wikipedia.org/wiki/Games_as_a_service) made managing data even more complicated. Spreadsheet is just not enough to handle the complex datas for GAAS 
+This is where **GameDataManager** comes in. It is designed to improve the productivity of game designers by providing necessary and convenient methods for data wrangling capability. 
 
 ## Core Functions 
 1. Data Converting 
@@ -44,8 +44,8 @@ We need create 'config.json' with basic informations about the project.
 `environment`: Path informations. You can either use absolute path or relative path from `.config.json`.
 - `xlsx`: Root path for `.xlsx`&`.xlsm`.
 - `out`: Root path for converted data.
-- `localize`: Root path for localization data.   
-- `jsonschema`: Root path for JSONSchema files.
+- `localize`: (optional)Root path for localization data.   
+- `jsonschema`: (optional)Root path for JSONSchema files.
 
 ## 2 Convert Settings
 Convert setting for each workbook. You need to specify each worksheet for coversion.  
@@ -81,8 +81,6 @@ Convert setting for each workbook. You need to specify each worksheet for covers
 - `kwargs`: Extra setting for data conversion. See [WIP] for more information.
 
 
-
-
 ## 3 Initialize
 After writing down a `config.json` is complete, you can initialize project. Provide root directory for `config.json` to `init_project` function. 
 ```
@@ -109,7 +107,6 @@ Or if you excute `xl()`, **GDM** will convert every file.
 
 ### `config.json` Examples
 - [GameDataManger Test](./test/project/config.json)
-
 
 # [WIP]Localization
 
