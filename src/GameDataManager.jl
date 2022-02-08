@@ -17,6 +17,7 @@ include("setup.jl")
 include("exporter.jl")
 include("localizer.jl")
 include("schema.jl")
+include("show.jl")
 include("utils.jl")
 
 

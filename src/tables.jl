@@ -1,9 +1,11 @@
 function lookfor_jsonschema(filename)
     schema = missing
     if endswith(filename, ".json")
-        schemafile = joinpath(GAMEENV["JSONSCHEMA"], filename)
-        if isfile(schemafile)
-            schema = SchemaData(schemafile)
+        if haskey(GAMEENV, "JSONSCHEMA")
+            schemafile = joinpath(GAMEENV["JSONSCHEMA"], filename)
+            if isfile(schemafile)
+                schema = SchemaData(schemafile)
+            end
         end
     end
     return schema
@@ -37,7 +39,9 @@ filepath(tb::XLSXTable) = xlsxpath(tb)
 _filename(xgd::XLSXTable{NAME}) where {NAME} = NAME
 
 index(x::XLSXTable) = x.data.sheetindex
-XLSXasJSON.sheetnames(xgd::XLSXTable) = sheetnames(xgd.data)
+function XLSXasJSON.sheetnames(xgd::XLSXTable)
+    collect(keys(xgd.out))
+end
 function XLSXasJSON.xlsxpath(tb::XLSXTable)::String
     if isa(tb.data, JSONWorkbook)
         p = xlsxpath(tb.data)
@@ -47,23 +51,5 @@ function XLSXasJSON.xlsxpath(tb::XLSXTable)::String
     return p
 end
 
-JSON.json(jws::JSONWorksheet, indent) = JSON.json(jws.data, indent)
-JSON.json(jws::JSONWorksheet) = JSON.json(jws.data)
-
-
-function Base.show(io::IO, bt::XLSXTable)
-    println(io, "XLSXTable")
-    sheets = sheetnames(bt)
-    outfiles = collect(values(bt.out))
-    schemas = .!(ismissing.(values(bt.schemas)))
-    if isa(bt.data, JSONWorkbook)
-        # print(io, " - ", bt.data)
-        pretty_table(io, hcat(1:length(sheets), sheets, outfiles, schemas); header = ["Idx", "Sheet", "Out", "Schema"], alignment=:l, 
-        tf = tf_markdown, header_crayon = crayon"bold green")
-    else 
-        f = replace(bt.data, GAMEENV["XLSX"] => "...") 
-        print(io, "(\"", f, "\")")
-    end
-end
 
 
