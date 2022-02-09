@@ -7,7 +7,7 @@ using XLSXasJSON
 using OrderedCollections
 using PrettyTables
 
-export init_project, xl
+export init_project, xl, xlookup
 
 
 include("abstractmeta.jl")

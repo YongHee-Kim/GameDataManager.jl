@@ -13,6 +13,9 @@ end
     XLSXTable
 
 wrapper around JSONWorkbook 
+
+# Note
+consider providing option to convert `JSONWorksheet` to `IndexedTables.jl` because the Unreal Engine **DataTable** requires `key` column   
 """
 mutable struct XLSXTable{FileName} <: Table
     data::Union{JSONWorkbook, String}
@@ -125,6 +128,7 @@ end
 function XLSXasJSON.sheetnames(xgd::XLSXTable)
     collect(keys(xgd.out))
 end
+filepath(tb::XLSXTable) = xlsxpath(tb)
 function XLSXasJSON.xlsxpath(tb::XLSXTable)::String
     if isloaded(tb)
         xlsxpath(tb.data)
@@ -134,4 +138,72 @@ function XLSXasJSON.xlsxpath(tb::XLSXTable)::String
 end
 
 
+"""
+    xlookup(value, jws::JSONWorksheet, lookup_col::JSONPointer, return_col::JSONPointer; 
+                find_mode = findfirst, lt=<comparison>)
+
+https://support.office.com/en-us/article/xlookup-function-b7fd680e-6d10-43e6-84f9-88eae8bf5929
+
+## Arguements
+- lt: equality operator. you can use `==`, `<=`, `>=`
+- find_mode: `findfirst`, `findlast`, `findall`
+
+## Examples
+- xlookup(5, Table("Items")["Equipment"], j"/Key", j"/Text/\$Name")
+- xlookup("HP", Table("Items")["Consumable"], j"/Type", :; find_mode = findlast)
+- xlookup(10, Table("Ability")["Data"], j"/Value", j"/\$Name"; lt = >=, find_mode = findall)
+"""
+@inline function xlookup(value, jws::JSONWorksheet, lookup_col, return_col; kwargs...)
+    xlookup(
+        value,
+        jws,
+        JSONPointer.Pointer(lookup_col),
+        JSONPointer.Pointer(return_col);
+        kwargs...,
+    )
+end
+@inline function xlookup(
+    value,
+    jws::JSONWorksheet,
+    lookup_col::JSONPointer.Pointer,
+    return_col;
+    find_mode::Function=findfirst,
+    lt::Function=isequal,
+)
+
+    if !haskey(jws, lookup_col) 
+        throw(ArgumentError("$(lookup_col) does not exist"))
+    end
+    if isa(return_col, JSONPointer.Pointer)
+        if !haskey(jws, return_col) 
+            throw(ArgumentError("$(return_col) does not exist"))
+        end
+    end
+
+    idx = _xlookup_findindex(value, jws, lookup_col, find_mode, lt)
+
+    if isnothing(idx)
+        r = nothing
+    elseif isempty(idx)
+        r = Any[]
+    else
+        if isa(return_col, Array)
+            col_indicies = map(return_col) do this
+                i = findfirst(el -> el.tokens == this.tokens, keys(jws))
+                if isa(i, Nothing)
+                    throw(KeyError(this))
+                end
+                i
+            end
+            r = jws[idx, col_indicies]
+        else 
+            r = jws[idx, return_col]
+        end
+    end
+    return r
+end
+
+@inline function _xlookup_findindex(value, jws, lookup_col, find_mode, lt)
+    find_mode(el -> lt(el[lookup_col], value), jws.data)
+end
 
