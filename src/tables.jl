@@ -5,6 +5,19 @@ abstract type Table <: AbstractMetaData end
 
 general interface to accessing the gamedata.  
 """
+function Table()
+    tablelist = string.(xlsxfilenames(CACHE["config"]))
+
+    menu = RadioMenu(tablelist, pagesize=8)
+    choice = request("Choose a Table to load (press 'q' to cancel) ", menu)
+  
+    if choice == -1 || choice > length(tablelist)
+        println("Menu canceled.")
+        return 
+    end 
+    fname = tablelist[choice]
+    return Table(fname)
+end
 function Table(fname)
     loadtable(fname)
 end

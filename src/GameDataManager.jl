@@ -1,7 +1,8 @@
 module GameDataManager
 
+
 using Printf
-using REPL
+using REPL.TerminalMenus
 using JSON, JSONPointer, JSONSchema
 using XLSXasJSON
 using OrderedCollections
