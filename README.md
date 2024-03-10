@@ -1,9 +1,6 @@
 # GameDataManager.jl[KR](README_KR.md/#Introduction)
 Easy and convenient toolkit for game designers to help manage data tables
 
-# Acknowledgement
-GameDataManager wouldn't have been possible without the endorsement from [Devsisters](https://www.devsisters.com) to open source the inhouse tool of the [same name](https://github.com/devsisters/GameDataManager.jl). 
-
 # Introduction 
 Game industries have seen lots of innovation and technological advancement. But only the game design department was fell behind such innovations. Artists and software engineers won't be able to tools from 20 years ago. But not the game designers. We can use Excel 2003 with little or no trouble because the tools game designers use didn't change much over the decades. Game designers spend most of their working hours wrestling with data. They have to architect the relationship between data and calculate possible outcomes of the interaction between players and data. And [GAAS](https://en.wikipedia.org/wiki/Games_as_a_service) made managing data even more complicated. Spreadsheet is just not enough to handle the complex datas for GAAS 
 This is where **GameDataManager** comes in. It is designed to improve the productivity of game designers by providing necessary and convenient methods for data wrangling capability. 
@@ -104,13 +101,12 @@ julia>xl("items")
 ```
 Or if you excute `xl()`, **GDM** will convert every file. 
 
+# Advanced Features 
 
-### `config.json` Examples
-- [GameDataManger Test](./test/project/config.json)
+## Localization 
 
-# [WIP]Localization
 
-# [WIP]Advanced Converting Features 
 
-# [WIP]JSONSchema validation 
 
+# Acknowledgement
+GameDataManager wouldn't have been possible without the endorsement from [Devsisters](https://www.devsisters.com) to open source the inhouse tool of the [same name](https://github.com/devsisters/GameDataManager.jl). 

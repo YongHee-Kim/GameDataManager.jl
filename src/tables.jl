@@ -155,8 +155,6 @@ end
     xlookup(value, jws::JSONWorksheet, lookup_col::JSONPointer, return_col::JSONPointer; 
                 find_mode = findfirst, lt=<comparison>)
 
-https://support.office.com/en-us/article/xlookup-function-b7fd680e-6d10-43e6-84f9-88eae8bf5929
-
 ## Arguements
 - lt: equality operator. you can use `==`, `<=`, `>=`
 - find_mode: `findfirst`, `findlast`, `findall`
@@ -166,7 +164,7 @@ https://support.office.com/en-us/article/xlookup-function-b7fd680e-6d10-43e6-84f
 - xlookup("HP", Table("Items")["Consumable"], j"/Type", :; find_mode = findlast)
 - xlookup(10, Table("Ability")["Data"], j"/Value", j"/\$Name"; lt = >=, find_mode = findall)
 """
-@inline function xlookup(value, jws::JSONWorksheet, lookup_col, return_col; kwargs...)
+function xlookup(value, jws::JSONWorksheet, lookup_col, return_col; kwargs...)
     xlookup(
         value,
         jws,
@@ -175,7 +173,7 @@ https://support.office.com/en-us/article/xlookup-function-b7fd680e-6d10-43e6-84f
         kwargs...,
     )
 end
-@inline function xlookup(
+function xlookup(
     value,
     jws::JSONWorksheet,
     lookup_col::JSONPointer.Pointer,
@@ -216,7 +214,7 @@ end
     return r
 end
 
-@inline function _xlookup_findindex(value, jws, lookup_col, find_mode, lt)
+function _xlookup_findindex(value, jws, lookup_col, find_mode, lt)
     find_mode(el -> lt(el[lookup_col], value), jws.data)
 end
 

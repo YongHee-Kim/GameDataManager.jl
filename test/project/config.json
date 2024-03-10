@@ -11,24 +11,6 @@
         "baseLanguage": "eng"
     },
     "xlsxtables": {
-        "Items.xlsx": {
-            "workSheets": [
-                {
-                    "name": "Equipment",
-                    "out": "Items_Equipment.json",
-                    "localize": {
-                        "keycolumn": "/Key"
-                    }
-                },
-                {
-                    "name": "Consumable",
-                    "out": "Items_Consumable.json",
-                    "kwargs": {
-                        "start_line": 2
-                    }                    
-                }
-            ]
-        },
         "TestData.xlsx": {
             "workSheets": [
                 {
@@ -60,6 +42,31 @@
                 {
                     "name": "Object",
                     "out": "TestData_Object.json"
+                }
+            ]
+        },
+        "Items.xlsx": {
+            "workSheets": [
+                {
+                    "name": "Weapon",
+                    "out": "Items_Weapon.json",
+                    "localize": {
+                        "keycolumn": "/Key"
+                    }
+                },
+                {
+                    "name": "Armour",
+                    "out": "Items_Armour.json",
+                    "localize": {
+                        "keycolumn": "/Key"
+                    }
+                },
+                {
+                    "name": "Accessory",
+                    "out": "Items_Accessory.json",
+                    "localize": {
+                        "keycolumn": "/Key"
+                    }
                 }
             ]
         },

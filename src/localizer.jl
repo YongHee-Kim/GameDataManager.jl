@@ -1,4 +1,4 @@
-# Convert Special Charaters in Keys
+# Convert Special Charaters in Keys to "." and "__" for braces
 const SPECIAL_CHAR_CONVERT = Dict('[' => "__", ']' => "__",
                                     '{' => "__", '}' => "__",
                                     '(' => "__", ')' => "__",
@@ -25,18 +25,16 @@ const SPECIAL_CHAR_CONVERT = Dict('[' => "__", ']' => "__",
                                     '+' => ".",
                                     '=' => ".",
                                     '|' => ".",
-                                    '~' => "."
-                                    )
+                                    '~' => ".")
 
-
+# 
 """
-    localizer!
+    localizer!(x::XLSXTable)
 
-
+find keys starts with '\$' and localize it with given filename and keycolumn
 """
 localize!(x) = x
 function localize!(tb::XLSXTable)
-    # TODO: allow use of combined key
     for s in sheetnames(tb)
         filename = tb.out[s]
         keycolumn = tb.localize_key[s]
@@ -68,20 +66,20 @@ function localize!(jws::JSONWorksheet, filename, keycolumn::AbstractString)
             finalkey = gamedata_lokalkey(token)
         end
         if haskey(localizedata, finalkey)
-            throw(AssertionError("`$finalkey`가 중복되었습니다. config.json에서 정의한 keycolumn의 값이 중복되지 않는지 확인해 주세요\n$(keycolumn) "))
+            throw(AssertionError("`$finalkey` is duplicated. Please check if keycolumn in config.json is unique\n$(keycolumn) "))
         end
         localizedata[finalkey] = text
 
         
         row_idx = token[2]
-        p1 = "/" * join(token[3:end], "/") # 원본
-        p2 = replace(p1, "\$" => "") # 발급된를 $이 제거된 컬럼에 저장
+        p1 = "/" * join(token[3:end], "/") # Original JSONPointer
+        p2 = replace(p1, "\$" => "") # Replace $ to get pure JSONPointer
         jws.data[row_idx][JSONPointer.Pointer(p2)] = finalkey
     end
     return localizedata
 end
 
-# Dict의 Key가 '$'으로 시작하면 있으면 로컬라이즈 대상이다
+# Localize columns are marked with '$' in the column name
 islocalize_column(s) = false
 islocalize_column(s::AbstractString) = startswith(s, "\$")
 function islocalize_column(p::JSONPointer.Pointer)::Bool
@@ -101,7 +99,7 @@ generate localization key from JSONPointer token
 """
 function gamedata_lokalkey(tokens)
     # $gamedata.(FileName)#/(JSONPointer)/rowindex"
-    idx = @sprintf("%04i", tokens[2]) #0000 형태
+    idx = @sprintf("%04i", tokens[2]) #0000 ~ 9999
     string(tokens[1], 
             ".", replace(join(tokens[3:end], "."), "\$" => ""),
             ".", idx)
