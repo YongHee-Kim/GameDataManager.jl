@@ -51,15 +51,16 @@ function localize!(jws::JSONWorksheet, filename, keycolumn::AbstractString)
         keycolumn = JSONPointer.Pointer(keycolumn)
     end
 
-    target_tokens = Tuple[]
+    # Put localization keys and values in the 'localize_targets'
+    localize_targets = Tuple[]
     for (i, row) in enumerate(jws)
-        localize_table!(row, ["\$gamedata.$(filename)", i], target_tokens)
+        localize_table!(row, ["\$gamedata.$(filename)", i], localize_targets)
     end
-    
     localizedata = OrderedDict{String, Any}()
-    for (token, text) in target_tokens
+    for (token, text) in localize_targets
         if isa(keycolumn, JSONPointer.Pointer)
             keyvalues = jws[token[2]][keycolumn]
+            @assert !isnull(keyvalues) "$filename[$(strip_pointer(keycolumn)), $(token[2])] is missing. Key column must be filled to localize"
             finalkey = gamedata_lokalkey(token, keyvalues)
         else
             # uses rownumber

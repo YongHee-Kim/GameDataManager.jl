@@ -1,12 +1,13 @@
 module GameDataManager
 
-
-using Printf
-using REPL.TerminalMenus
-using JSON, JSONPointer, JSONSchema
-using XLSXasJSON
+using JSON
+using JSONPointer
+using JSONSchema
 using OrderedCollections
 using PrettyTables
+using Printf
+using Term
+using XLSXasJSON
 
 export init_project, xl, xlookup
 

@@ -7,12 +7,19 @@ using Test
 import GameDataManager.GAMEENV
 
 project_path = joinpath(@__DIR__, "project")
+@testset "init_project tests" begin
 
-@testset "Project Setting" begin 
-    init_project(project_path)
     @test isdir("$(project_path)/json")
     @test isdir("$(project_path)/localization")
+
+    config_file = joinpath(project_path, "config.json")
+    JSON.parsefile(config_file)
+    config_json = JSON.parsefile(config_file; dicttype=OrderedDict{String,Any}, use_mmap=false)
+
+    GDMconfig = init_project(project_path)
+    @test GDMconfig.data == config_json
 end
+
 
 @testset "Read XLSXTable" begin 
     tb = GameDataManager.loadtable("Items")
@@ -21,7 +28,7 @@ end
     @test tb == tb2
     @test basename(tb) == "Items.xlsx"
     @test normpath(dirname(tb)) == normpath(joinpath(project_path, "xlsx"))
-    @test GameDataManager.sheetnames(tb) == ["Equipment", "Consumable"]
+    @test GameDataManager.sheetnames(tb) == ["Weapon", "Armour", "Accessory"]
 end
 
 @testset "Export to JSON" begin 
@@ -32,12 +39,11 @@ end
     @test isfile(joinpath(dir, "TestData_Object.json"))
     @test isfile(joinpath(dir, "TestData_Csv.csv"))
     @test isfile(joinpath(dir, "TestData_Tsv.tsv"))
-    @test isfile(joinpath(dir, "Items_Equipment.json"))
-    @test isfile(joinpath(dir, "Items_Consumable.json"))
-    @test isfile(joinpath(dir, "Character.json"))
+    @test isfile(joinpath(dir, "Items_Weapon.json"))
+    @test isfile(joinpath(dir, "Items_Armour.json"))
+    @test isfile(joinpath(dir, "Items_Accessory.json"))
 
     # Data Structure 
-
     coldata = JSON.parsefile(joinpath(dir, "TestData_Column.json"); dicttype=OrderedDict)
     @test length(coldata) == 1
     @test coldata[1]["TimeZone"] == "GMT+0"
@@ -79,6 +85,11 @@ end
 
 
 @testset "Localization" begin 
+    # localize files 
+    @test isfile(joinpath(GAMEENV["LOCALIZE"], "Items_Weapon_eng.json"))
+    @test isfile(joinpath(GAMEENV["LOCALIZE"], "Items_Armour_eng.json"))
+    @test isfile(joinpath(GAMEENV["LOCALIZE"], "Items_Accessory_eng.json"))
+
     localizedata = OrderedDict{String, String}()
     for f in readdir(GAMEENV["LOCALIZE"]; join = true)
         objdata = JSON.parsefile(f; dicttype=OrderedDict)
@@ -100,3 +111,5 @@ end
 #     tb = GameDataManager.loadtable("Items")
 #     GameDataManager.validate(tb, "Equipment")
 # end
+
+
