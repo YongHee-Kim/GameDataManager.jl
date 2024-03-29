@@ -44,7 +44,7 @@ function export_xlsxtable(fname)
 
     for s in sheetnames(tb)
         fname = tb.out[s]
-        write_worksheet(fname, tb.data[s])
+        export_worksheet(fname, tb.data[s])
         localizedata = tb.localizedata[s]
         if !ismissing(localizedata)
             write_localize(fname, localizedata)
@@ -54,12 +54,12 @@ function export_xlsxtable(fname)
 end
 
 """
-    write_worksheet(fname::String, jws::JSONWorksheet)
+    export_worksheet(fname::String, jws::JSONWorksheet)
 
 Writes the JSONWorksheet `jws` to a file with the name `fname`.
 If the file does not exist or they are modified, writes JSONWorksheet to the file, otherwise does nothing
 """
-function write_worksheet(fname, jws::JSONWorksheet)
+function export_worksheet(fname, jws::JSONWorksheet)
     dir = GAMEENV["OUT"]
     filepath = joinpath(dir, fname)
     ext = splitext(fname)[2]
@@ -78,6 +78,19 @@ function write_worksheet(fname, jws::JSONWorksheet)
         print(normpath(filepath), "\n")
     end
 end
+
+function export_worksheet(tb::XLSXTable, sheetname)
+    ws = tb[sheetname]
+    fname = tb.out[sheetname]
+    println("『", basename(tb), "』")
+
+    export_worksheet(fname, ws)
+    localizedata = tb.localizedata[sheetname]
+    if !ismissing(localizedata)
+        write_localize(fname, localizedata)
+    end
+end
+
 function write_to_buffer(io, jws, ext)
     if ext == ".json"
         XLSXasJSON.write(io, jws)
@@ -89,7 +102,6 @@ function write_to_buffer(io, jws, ext)
         throw(ArgumentError("\"$ext\" file type is not supported, use \".json\" or \".csv\""))
     end
 end
-
 
 
 function delimit(jws::JSONWorksheet, delim)

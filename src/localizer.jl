@@ -27,11 +27,18 @@ const SPECIAL_CHAR_CONVERT = Dict('[' => "__", ']' => "__",
                                     '|' => ".",
                                     '~' => ".")
 
-# 
+#
 """
     localizer!(x::XLSXTable)
 
 find keys starts with '\$' and localize it with given filename and keycolumn
+This works as follows 
+
+1. Generate localization key from JSONPointer token; see `gamedata_lokalkey`
+2. Replace the original JSONPointer with the localization key
+3. Replace data of column with '\$' with the localization key
+4. Add a new column without '\$' and store the original data 
+
 """
 localize!(x) = x
 function localize!(tb::XLSXTable)

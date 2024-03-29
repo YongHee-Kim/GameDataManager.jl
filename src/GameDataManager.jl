@@ -6,6 +6,7 @@ using JSONSchema
 using OrderedCollections
 using PrettyTables
 using Printf
+using REPL.TerminalMenus 
 using Term
 using XLSXasJSON
 

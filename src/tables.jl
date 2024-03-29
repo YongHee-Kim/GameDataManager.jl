@@ -124,6 +124,19 @@ function loadtable(fname::Symbol)
     loaddata!(config.tables[fname])
 end
 
+"""
+    parsefile_outjson(tb::XLSXTable, sheetname)
+
+parse output json file. if the file does not exist, save it.
+"""
+function parsefile_outjson(tb::XLSXTable, sheetname)
+    dir = GAMEENV["OUT"]
+    out = tb.out[sheetname]
+    if !isfile(out)
+        export_worksheet(tb, sheetname)
+    end
+    return JSON.parsefile(joinpath(dir, out); dicttype=OrderedDict{String,Any})
+end
 
 # fallback function
 Base.basename(xgd::XLSXTable) = basename(xlsxpath(xgd))

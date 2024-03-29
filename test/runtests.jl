@@ -22,13 +22,13 @@ end
 
 
 @testset "Read XLSXTable" begin 
-    tb = GameDataManager.loadtable("Items")
-    tb2 = GameDataManager.loadtable("items")
-    # jwb3 = GameDataManager.loadtable("items.xlsx")
-    @test tb == tb2
-    @test basename(tb) == "Items.xlsx"
-    @test normpath(dirname(tb)) == normpath(joinpath(project_path, "xlsx"))
-    @test GameDataManager.sheetnames(tb) == ["Weapon", "Armour", "Accessory"]
+    wb = GameDataManager.loadtable("Items")
+    wb2 = GameDataManager.Table("items")
+
+    @test wb == wb2
+    @test basename(wb) == "Items.xlsx"
+    @test normpath(dirname(wb)) == normpath(joinpath(project_path, "xlsx"))
+    @test GameDataManager.sheetnames(wb) == ["Weapon", "Armour", "Accessory"]
 end
 
 @testset "Export to JSON" begin 
@@ -68,6 +68,54 @@ end
     end
 end 
 
+
+@testset "Localization" begin 
+    # localize files 
+    @test isfile(joinpath(GAMEENV["LOCALIZE"], "Items_Weapon_eng.json"))
+    @test isfile(joinpath(GAMEENV["LOCALIZE"], "Items_Armour_eng.json"))
+    @test isfile(joinpath(GAMEENV["LOCALIZE"], "Items_Accessory_eng.json"))
+
+    # Put all localzized file together, make sure there is no key conflict
+    localizedata = OrderedDict{String, String}()
+    length_check = 0
+    for f in readdir(GAMEENV["LOCALIZE"]; join = true)
+        objdata = JSON.parsefile(f; dicttype=OrderedDict)
+        length_check += length(objdata)
+        merge!(localizedata, objdata)
+    end
+    @test length(localizedata) == length_check
+
+    # Read the localization Key 
+    GAMEENV["OUT"]
+
+    wb = GameDataManager.Table("Items")
+    wb.localizedata["Weapon"]
+
+    for sname in GameDataManager.sheetnames(wb)
+        outfile = GameDataManager.parsefile_outjson(wb, sname)
+        localizedata= wb.localizedata[sname]
+        for row in outfile
+            for k in keys(row)
+                if GameDataManager.islocalize_column(k)
+                    k2 = replace(k, "\$" => "")
+                    # Does not generate localize column if the value is empty 
+                    if haskey(row, k2)
+                        @test haskey(localizedata, row[k2])
+                        @test localizedata[row[k2]] == row[k]
+                    end
+                end
+            end
+        end
+    end
+end
+
+
+@testset "JSON Schema" begin 
+    wb = GameDataManager.Table("Items")
+
+end
+
+
 @testset "Export to CSV, TSV" begin
     dir = GAMEENV["OUT"]
     csvdata = readdlm(joinpath(dir, "TestData_Csv.csv"), ',')
@@ -82,34 +130,5 @@ end
     # Localization keys are different 
     @test csvdata[:, 1:4] == tsvdata[:, 1:4]
 end
-
-
-@testset "Localization" begin 
-    # localize files 
-    @test isfile(joinpath(GAMEENV["LOCALIZE"], "Items_Weapon_eng.json"))
-    @test isfile(joinpath(GAMEENV["LOCALIZE"], "Items_Armour_eng.json"))
-    @test isfile(joinpath(GAMEENV["LOCALIZE"], "Items_Accessory_eng.json"))
-
-    localizedata = OrderedDict{String, String}()
-    for f in readdir(GAMEENV["LOCALIZE"]; join = true)
-        objdata = JSON.parsefile(f; dicttype=OrderedDict)
-        merge!(localizedata, objdata)
-    end
-
-    # # check origin file
-    #  for (fname, tb) in GameDataManager.CACHE["tables"] 
-    #     for (sheet, localizedata) in tb.localizedata 
-    #         if !ismissing(localizedata)
-
-    #         end
-    #     end
-    #  end
-end
-
-
-# @testset "JSONSchema validation" begin 
-#     tb = GameDataManager.loadtable("Items")
-#     GameDataManager.validate(tb, "Equipment")
-# end
 
 
