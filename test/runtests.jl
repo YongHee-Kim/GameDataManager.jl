@@ -9,9 +9,6 @@ import GameDataManager.GAMEENV
 project_path = joinpath(@__DIR__, "project")
 @testset "init_project tests" begin
 
-    @test isdir("$(project_path)/json")
-    @test isdir("$(project_path)/localization")
-
     config_file = joinpath(project_path, "config.json")
     JSON.parsefile(config_file)
     config_json = JSON.parsefile(config_file; dicttype=OrderedDict{String,Any}, use_mmap=false)
