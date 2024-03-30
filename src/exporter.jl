@@ -44,7 +44,7 @@ function export_xlsxtable(fname)
 
     for s in sheetnames(tb)
         fname = tb.out[s]
-        write_worksheet(fname, tb.data[s])
+        export_worksheet(fname, tb.data[s])
         localizedata = tb.localizedata[s]
         if !ismissing(localizedata)
             write_localize(fname, localizedata)
@@ -52,35 +52,57 @@ function export_xlsxtable(fname)
     end
     nothing
 end
-function write_worksheet(fname, jws::JSONWorksheet)
-    dir = GAMEENV["OUT"]
 
-    io = joinpath(dir, fname)
+"""
+    export_worksheet(fname::String, jws::JSONWorksheet)
+
+Writes the JSONWorksheet `jws` to a file with the name `fname`.
+If the file does not exist or they are modified, writes JSONWorksheet to the file, otherwise does nothing
+"""
+function export_worksheet(fname, jws::JSONWorksheet)
+    dir = GAMEENV["OUT"]
+    filepath = joinpath(dir, fname)
     ext = splitext(fname)[2]
+
+    io = IOBuffer()
+    write_to_buffer(io, jws, ext)
+
+    newdata = String(take!(io))
+    # Write to file if it's modified
+    if !isfile(filepath) || !issamedata(read(filepath, String), newdata)
+        write(filepath, newdata)
+        print(" SAVE => ")
+        printstyled(normpath(filepath), "\n"; color = :blue)
+    else
+        print("  ⁿ/ₐ => ")
+        print(normpath(filepath), "\n")
+    end
+end
+
+function export_worksheet(tb::XLSXTable, sheetname)
+    ws = tb[sheetname]
+    fname = tb.out[sheetname]
+    println("『", basename(tb), "』")
+
+    export_worksheet(fname, ws)
+    localizedata = tb.localizedata[sheetname]
+    if !ismissing(localizedata)
+        write_localize(fname, localizedata)
+    end
+end
+
+function write_to_buffer(io, jws, ext)
     if ext == ".json"
-        newdata = JSON.json(jws, 2)
+        XLSXasJSON.write(io, jws)
     elseif ext == ".csv"
-        newdata = delimit(jws, ',')
+        write(io, delimit(jws, ','))
     elseif ext == ".tsv"
-        newdata = delimit(jws, '\t')
+        write(io, delimit(jws, '\t'))
     else 
         throw(ArgumentError("\"$ext\" file type is not supported, use \".json\" or \".csv\""))
     end
-        
-    # 편집된 시트만 저장
-    modified = true
-    if isfile(io)
-        modified = !issamedata(read(io, String), newdata)
-    end
-    if modified
-        write(io, newdata)
-        print(" SAVE => ")
-        printstyled(normpath(io), "\n"; color = :blue)
-    else
-        print("  ⁿ/ₐ => ")
-        print(normpath(io), "\n")
-    end
 end
+
 
 function delimit(jws::JSONWorksheet, delim)
     # you cannot use column name from xlsx for the type notation

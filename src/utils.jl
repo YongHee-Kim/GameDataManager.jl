@@ -24,8 +24,8 @@ function namedtuple(d::AbstractDict{Symbol,T}) where T
     NamedTuple{key}(val)
 end
 
-function print_write_result(path, msg="다음과 같습니다")
-    print_section("$(msg)\n   SAVED => $(normpath(path))", "연산결과"; color=:green)
+function print_write_result(path, msg="The result is...")
+    print_section("$(msg)\n   SAVED => $(normpath(path))", "DONE"; color=:green)
 
     nothing
 end
@@ -58,4 +58,8 @@ function throw_fuzzylookupname(names::AbstractArray, idx::AbstractString;
     end
     candidatesstr = join(string.("\"", candidates, "\""), ", ", " and ")
     throw(ArgumentError(msg * "\nexisting most similar names are: $candidatesstr"))
+end
+
+function strip_pointer(p::JSONPointer.Pointer)
+    "/" * join(p.tokens[1:end], "/")
 end

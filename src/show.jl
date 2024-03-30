@@ -5,10 +5,12 @@ function Base.show(io::IO, con::ConfigData)
     for (fname, sheetdata) in con["xlsxtables"]
         print(io, "  ┕", fname)
         print(io, " - [")
-        for el in sheetdata["workSheets"]
-            print(io, "\"", el["name"], "\"")
-            if el != last(sheetdata["workSheets"])
-                print(io, ", ")
+        if haskey(sheetdata, "workSheets")
+            for el in sheetdata["workSheets"]
+                print(io, "\"", el["name"], "\"")
+                if el != last(sheetdata["workSheets"])
+                    print(io, ", ")
+                end
             end
         end
         println(io, "]")

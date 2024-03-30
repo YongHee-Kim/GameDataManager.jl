@@ -3,7 +3,7 @@
     validate(bt::XLSXTable)
     validate(jws::JSONWorksheet)
 
-validate 
+validate data againt JSON schema and print error messages.
 """
 function validate(tb::XLSXTable)
     for sheet in sheetnames(tb)

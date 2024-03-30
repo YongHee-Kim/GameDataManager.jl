@@ -1,4 +1,14 @@
 init_project() = init_project(pwd())
+
+"""
+    init_project(path::String)
+
+Initialize a new project from the root directory. Checkout [`ConfigData`](@ref)
+
+# Arguments
+- `path`: The root directory of the project. it must contain a `config.json` file. By default, it is the current working directory.
+
+"""
 function init_project(path)
     config = joinpath(path, "config.json")
     if !isfile(config)
@@ -17,5 +27,7 @@ function init_project(path)
         end
     end
 
-    # @info "\"$(CACHE["config"]["name"])\" Project has loaded successfully!"
+    # log succesful project load with the project name  
+    println("Project $(CACHE["config"].data["name"]) loaded successfully")
+    return CACHE["config"]
 end
