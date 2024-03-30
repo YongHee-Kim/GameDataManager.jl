@@ -1,5 +1,15 @@
 using Documenter, GameDataManager
 
+# copy coverage report to build folder for Documentor.jl to take along to `gh-pages` branch 
+function copy_coverage()
+  source = joinpath(@__DIR__, "src/coverage")
+  target = joinpath(@__DIR__, "build/coverage")
+  @info "Copy $source to $target" 
+
+  cp(source, target; force = true)
+  nothing
+end
+
 makedocs(
     sitename = "GameDataManager.jl",
     modules = [ GameDataManager ],
@@ -11,7 +21,9 @@ makedocs(
             ]
 )
 
-# deploydocs(
-#     repo = "github.com/felipenoris/XLSX.jl.git",
-#     target = "build",
-# )
+deploydocs(
+    repo   = "github.com/YongHee-Kim/GameDataManager.jl.git",
+    target = "build",
+    deps   = copy_coverage(),
+    make   = nothing
+)
