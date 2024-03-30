@@ -16,6 +16,7 @@ XLSXasJSON = "8c9e00cc-ccf1-11e8-3de6-5b028f480d9e"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 
 [targets]
-test = ["Test"]
+test = ["Test", "DelimitedFiles"]
