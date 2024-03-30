@@ -11,10 +11,10 @@ function copy_coverage()
 end
 
 makedocs(
+  modules = [ GameDataManager ],
     sitename = "GameDataManager.jl",
-    modules = [ GameDataManager ],
-    checkdocs=:warnonly, # should be :all, need to fix the error 
-    authors = "YongHee Kim",
+    authors = "Yonghee Kim",
+    checkdocs=:all, # should be :all, need to fix the error 
     pages = [ "Home" => "index.md",
               "Tutorial" => "tutorial.md",
               "API Reference" => "api.md"
