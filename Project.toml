@@ -11,12 +11,11 @@ OrderedCollections = "bac558e1-5e72-5ebc-8fee-abe8a469f55d"
 PrettyTables = "08abe8d2-0d0c-5749-adfa-8a2ac140af0d"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 REPL = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
-Term = "22787eb5-b846-44ae-b979-8e399b8463ab"
 XLSXasJSON = "8c9e00cc-ccf1-11e8-3de6-5b028f480d9e"
 
 [extras]
-Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
 test = ["Test", "DelimitedFiles"]
