@@ -6,7 +6,7 @@
       "Key": {
         "type": "integer"
       },
-      "Text": {
+      "Name": {
         "type": "array"
       }
     }

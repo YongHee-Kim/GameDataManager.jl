@@ -108,7 +108,7 @@ function delimit(jws::JSONWorksheet, delim)
     # you cannot use column name from xlsx for the type notation
     # colnames = map(el -> '/' * join(el.tokens, '/'), keys(jws))
     s = join(keys(jws[1]), delim) * '\n'
-    for i in 1:length(jws)
+    for i in 1:eachindex(jws)
         s *= join(map(el -> delimit(el, delim), values(jws[i])), delim)
         if i < length(jws)
             s *= '\n'
