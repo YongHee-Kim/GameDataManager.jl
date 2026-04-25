@@ -9,23 +9,24 @@ on:
   pull_request:
 
 jobs:
-  check_ongoingjob: 
+  check_ongoingjob:
     runs-on: ubuntu-latest
     steps:
     - name: Cancel ongoing documentation builds for previous commits
-      uses: styfle/cancel-workflow-action@0.6.0
+      uses: styfle/cancel-workflow-action@0.12.1
       with:
         access_token: ${{ github.token }}
 
   report_testcoverage:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: julia-actions/setup-julia@latest
+      - uses: actions/checkout@v4
+      - uses: julia-actions/setup-julia@v2
         with:
-          version: '1.7'
-      - uses: julia-actions/julia-buildpkg@latest
-      - uses: julia-actions/julia-runtest@latest
+          version: '1'
+      - uses: julia-actions/cache@v2
+      - uses: julia-actions/julia-buildpkg@v1
+      - uses: julia-actions/julia-runtest@v1
       - uses: julia-actions/julia-processcoverage@v1
       - name: Setup .NET Core # Required to execute ReportGenerator
         uses: actions/setup-dotnet@v3
