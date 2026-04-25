@@ -4,10 +4,12 @@ on:
   pull_request:
     branches:
       - main
+      - dev_0.1.2
   push:
     branches:
       - main
       - develop
+      - dev_0.1.2
     tags: '*'
 
 jobs:

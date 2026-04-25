@@ -1,35 +1,67 @@
-function xl(exportall::Bool = false)
+"""
+    xl(; strict=false)
+    xl(fname; strict=false)
+
+Export xlsx files configured in `config.json` to JSON/CSV/TSV.
+
+With no argument, exports every file in the config. With `fname`, exports only that file.
+
+# Keyword Arguments
+- `strict`: when `true`, the first failure is rethrown. When `false` (default), failures
+  are collected and a summary is printed at the end so a single broken sheet does not
+  abort the batch.
+"""
+function xl(; strict::Bool = false)
     update!(CACHE["config"])
 
     files = xlsxfilenames(CACHE["config"])
     if isempty(files)
         print_section("nothing to export."; color=:yellow)
+        return nothing
+    end
+    print_section(
+        "exporting xlsx files... ⚒\n" * "-"^(displaysize(stdout)[2] - 4);
+        color = :cyan,
+    )
+    failures = Pair{String,Exception}[]
+    for f in files
+        try
+            export_xlsxtable(f)
+        catch e
+            strict && rethrow()
+            push!(failures, string(f) => e)
+            printstyled("$f export failed: ", sprint(showerror, e), "\n"; color = :red)
+        end
+    end
+    n_ok = length(files) - length(failures)
+    if isempty(failures)
+        print_section("$(length(files)) xlsx files are exported ☺", "DONE"; color = :cyan)
     else
         print_section(
-            "exporting xlsx files... ⚒\n" * "-"^(displaysize(stdout)[2] - 4);
-            color = :cyan,
+            "$n_ok ok, $(length(failures)) failed:\n" *
+            join(("  - $f" for (f, _) in failures), '\n'),
+            "DONE WITH ERRORS"; color = :yellow,
         )
-        for f in files
-            try
-                export_xlsxtable(f)
-            catch e
-                printstyled("$f export failed\n"; color = :red)
-            end
-        end
-        print_section("$(length(files)) xlsx files are exported ☺", "DONE"; color = :cyan)
     end
+    return nothing
 end
-function xl(fname)
+function xl(fname; strict::Bool = false)
     update!(CACHE["config"])
 
     print_section(
         "exporting xlsx file... ⚒\n" * "-"^(displaysize(stdout)[2] - 4);
         color = :cyan,
     )
-    export_xlsxtable(fname)
+    try
+        export_xlsxtable(fname)
+    catch e
+        strict && rethrow()
+        printstyled("$fname export failed: ", sprint(showerror, e), "\n"; color = :red)
+        return nothing
+    end
     print_section("export complete ☺", "DONE"; color = :cyan)
 
-    nothing
+    return nothing
 end
 
 

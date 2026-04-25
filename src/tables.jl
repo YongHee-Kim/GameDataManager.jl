@@ -144,11 +144,11 @@ Base.dirname(xgd::XLSXTable) = dirname(xlsxpath(xgd))
 
 _filename(xgd::XLSXTable{NAME}) where {NAME} = NAME
 
-function index(x::XLSXTable) 
-    if isloaded(tb) 
+function index(x::XLSXTable)
+    if isloaded(x)
         x.data.sheetindex
-    else 
-        throw(AssertionError("xlsx data is not loaded"))
+    else
+        throw(ArgumentError("xlsx data is not loaded"))
     end
 end
 function XLSXasJSON.sheetnames(xgd::XLSXTable)
