@@ -66,7 +66,7 @@ function localize!(jws::JSONWorksheet, filename, keycolumn::AbstractString)
     localizedata = OrderedDict{String, Any}()
     for (token, text) in localize_targets
         if isa(keycolumn, JSONPointer.Pointer)
-            keyvalues = jws[token[2]][keycolumn]
+            keyvalues = get_pointer(jws[token[2]], keycolumn)
             if ismissing(keyvalues) || isnothing(keyvalues)
                 throw(ArgumentError("$filename[$(strip_pointer(keycolumn)), $(token[2])] is missing. Key column must be filled to localize"))
             end
@@ -84,7 +84,7 @@ function localize!(jws::JSONWorksheet, filename, keycolumn::AbstractString)
         row_idx = token[2]
         p1 = "/" * join(token[3:end], "/") # Original JSONPointer
         p2 = replace(p1, "\$" => "") # Replace $ to get pure JSONPointer
-        jws.data[row_idx][JSONPointer.Pointer(p2)] = finalkey
+        set_pointer!(jws.data[row_idx], JSONPointer.Pointer(p2), finalkey)
     end
     return localizedata
 end

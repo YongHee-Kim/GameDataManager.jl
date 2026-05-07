@@ -228,6 +228,6 @@ function xlookup(
 end
 
 function _xlookup_findindex(value, jws, lookup_col, find_mode, lt)
-    find_mode(el -> lt(el[lookup_col], value), jws.data)
+    find_mode(el -> lt(get_pointer(el, lookup_col), value), jws.data)
 end
 

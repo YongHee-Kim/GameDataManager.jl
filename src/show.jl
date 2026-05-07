@@ -23,7 +23,8 @@ function Base.show(io::IO, bt::XLSXTable)
     outfiles = collect(values(bt.out))
     schemas = .!(ismissing.(values(bt.schemas)))
 
-        pretty_table(io, hcat(1:length(sheets), sheets, outfiles, schemas); header = ["Idx", "Sheet", "Out", "Schema"], alignment=:l, 
-        tf = tf_markdown, header_crayon = crayon"bold green")
+    pretty_table(io, hcat(1:length(sheets), sheets, outfiles, schemas);
+        column_labels = ["Idx", "Sheet", "Out", "Schema"], alignment = :l,
+        backend = :markdown)
 
 end
