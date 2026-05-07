@@ -30,8 +30,11 @@ function json_to_xl(; strict::Bool=false)
             json_to_xl_table(f)
         catch e
             strict && rethrow()
+            bt = catch_backtrace()
             push!(failures, string(f) => e)
-            printstyled("$f import failed: ", sprint(showerror, e), "\n"; color=:red)
+            printstyled("$f import failed:\n"; color=:red)
+            showerror(stdout, e, bt)
+            println()
         end
     end
     n_ok = length(files) - length(failures)
@@ -226,8 +229,10 @@ function _collect_paths!(prefix, node::AbstractArray, seen)
     if isempty(node) || all(x -> !isa(x, AbstractDict) && !isa(x, AbstractArray), node)
         seen[prefix] = true
     else
+        # 1-based array indices to match JSONPointer.jl's non-standard indexing
+        # (it explicitly rejects "/0/..." paths). See JSONPointer/src/pointer.jl.
         for (i, el) in enumerate(node)
-            _collect_paths!(prefix * "/" * string(i - 1), el, seen)
+            _collect_paths!(prefix * "/" * string(i), el, seen)
         end
     end
 end
@@ -256,11 +261,12 @@ function _get_at_path(node, path::AbstractString)
                 return missing
             end
         elseif isa(cur, AbstractArray)
+            # Tokens are 1-based to match JSONPointer.jl indexing.
             idx = tryparse(Int, p)
-            if idx === nothing || idx < 0 || idx + 1 > length(cur)
+            if idx === nothing || idx < 1 || idx > length(cur)
                 return missing
             end
-            cur = cur[idx + 1]
+            cur = cur[idx]
         else
             return missing
         end

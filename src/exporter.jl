@@ -29,8 +29,11 @@ function xl(; strict::Bool = false)
             export_xlsxtable(f)
         catch e
             strict && rethrow()
+            bt = catch_backtrace()
             push!(failures, string(f) => e)
-            printstyled("$f export failed: ", sprint(showerror, e), "\n"; color = :red)
+            printstyled("$f export failed:\n"; color = :red)
+            showerror(stdout, e, bt)
+            println()
         end
     end
     n_ok = length(files) - length(failures)
@@ -56,7 +59,10 @@ function xl(fname; strict::Bool = false)
         export_xlsxtable(fname)
     catch e
         strict && rethrow()
-        printstyled("$fname export failed: ", sprint(showerror, e), "\n"; color = :red)
+        bt = catch_backtrace()
+        printstyled("$fname export failed:\n"; color = :red)
+        showerror(stdout, e, bt)
+        println()
         return nothing
     end
     print_section("export complete ☺", "DONE"; color = :cyan)
