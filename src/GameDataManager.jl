@@ -9,6 +9,7 @@ using Printf
 using REPL.TerminalMenus 
 using Term
 using XLSXasJSON
+import XLSXasJSON: sheetnames, xlsxpath
 
 export init_project, xl, xlookup, json_to_xl
 

@@ -368,29 +368,54 @@ end
 """
     json_to_xl_write(path, sheets)
 
-Write `sheets` (a vector of `sheetname => Matrix{Any}`) to `path` as a fresh
-xlsx workbook. `missing` / `nothing` / empty-string cells are left blank.
+Write `sheets` (a vector of `sheetname => Matrix{Any}`) to `path`. If `path`
+already exists, the workbook is opened for in-place editing (`mode="rw"`):
+each cell is read first and only overwritten when its value differs, so
+formatting, formulas, comments, and cells outside the matrix bounds are
+preserved. Sheets present in `sheets` but missing from the workbook are
+appended; sheets in the workbook not listed in `sheets` are left untouched.
+If `path` does not exist, a fresh workbook is created. `missing` / `nothing`
+/ empty-string cells in `m` clear the corresponding cell in an existing
+workbook (and are left blank when creating fresh).
 """
 function json_to_xl_write(path, sheets)
     mkpath(dirname(path))
-    XLSX.openxlsx(path, mode="w") do xf
-        for (idx, (sheetname, m)) in enumerate(sheets)
-            sheet = if idx == 1
-                XLSX.rename!(xf[1], sheetname)
-                xf[1]
-            else
-                XLSX.addsheet!(xf, sheetname)
+    if isfile(path)
+        XLSX.openxlsx(path, mode="rw") do xf
+            existing = XLSX.sheetnames(xf)
+            for (sheetname, m) in sheets
+                sheet = sheetname in existing ? xf[sheetname] : XLSX.addsheet!(xf, sheetname)
+                _write_sheet_diff!(sheet, m)
             end
-            nrows, ncols = size(m)
-            for i in 1:nrows, j in 1:ncols
-                v = m[i, j]
-                if !ismissing(v) && v !== nothing && !(isa(v, AbstractString) && isempty(v))
-                    sheet[i, j] = v
+        end
+    else
+        XLSX.openxlsx(path, mode="w") do xf
+            for (idx, (sheetname, m)) in enumerate(sheets)
+                sheet = if idx == 1
+                    XLSX.rename!(xf[1], sheetname)
+                    xf[1]
+                else
+                    XLSX.addsheet!(xf, sheetname)
                 end
+                _write_sheet_diff!(sheet, m)
             end
         end
     end
     print(" SAVE => ")
     printstyled(normpath(path), "\n"; color=:blue)
     return path
+end
+
+function _write_sheet_diff!(sheet, m)
+    nrows, ncols = size(m)
+    for i in 1:nrows, j in 1:ncols
+        v = m[i, j]
+        is_blank = ismissing(v) || v === nothing || (isa(v, AbstractString) && isempty(v))
+        current = sheet[i, j]
+        if is_blank
+            ismissing(current) || (sheet[i, j] = missing)
+        elseif ismissing(current) || current != v
+            sheet[i, j] = v
+        end
+    end
 end

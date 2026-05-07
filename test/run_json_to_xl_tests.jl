@@ -76,10 +76,11 @@ using XLSX
         @test m[3, 1] == 2 && m[3, 2] == "y"
 
         m2 = json_to_xl_matrix(rows, (start_line=3,))
-        @test size(m2) == (4, 2)
+        @test size(m2) == (5, 2)
         @test ismissing(m2[1, 1]) && ismissing(m2[2, 1])
         @test m2[3, 1] == "/A"
         @test m2[4, 1] == 1
+        @test m2[5, 1] == 2
 
         m3 = json_to_xl_matrix(rows, (row_oriented=false,))
         @test size(m3) == (2, 3)
@@ -199,6 +200,77 @@ using XLSX
         end
     end
 
+    @testset "json_to_xl_write — in-place diff against existing xlsx" begin
+        # Build a seed workbook in test/data with content that extends beyond
+        # what we'll later overwrite, plus a second sheet we never list, so we
+        # can verify preservation of out-of-bounds cells, untouched sheets,
+        # and clearing-on-blank.
+        data_dir = joinpath(@__DIR__, "data")
+        mkpath(data_dir)
+        seed_path = joinpath(data_dir, "diff_seed.xlsx")
+        XLSX.openxlsx(seed_path, mode="w") do xf
+            XLSX.rename!(xf[1], "Main")
+            s = xf[1]
+            s[1, 1] = "/Key"; s[1, 2] = "/Name";   s[1, 3] = "/Note"
+            s[2, 1] = 1;      s[2, 2] = "Apple";   s[2, 3] = "fruit"
+            s[3, 1] = 2;      s[3, 2] = "Banana";  s[3, 3] = "yellow"
+            XLSX.addsheet!(xf, "Other")
+            s2 = xf["Other"]
+            s2[1, 1] = "untouched"
+            s2[2, 1] = "stays"
+        end
+
+        # Work on a copy so the seed remains reusable across runs
+        work = joinpath(mktempdir(), "out.xlsx")
+        cp(seed_path, work)
+
+        # Diff matrix:
+        #   row 1  headers identical    → no rewrite (still equals)
+        #   [2,1]  same value (1)       → no rewrite
+        #   [2,2]  "Apple"  → "Apricot" → overwritten
+        #   [2,3]  "fruit"  → missing   → cleared
+        #   row 3  out of matrix bounds → preserved as-is
+        m = Matrix{Any}(missing, 2, 3)
+        m[1, 1] = "/Key"; m[1, 2] = "/Name"; m[1, 3] = "/Note"
+        m[2, 1] = 1;       m[2, 2] = "Apricot"  # m[2, 3] stays missing
+
+        json_to_xl_write(work, ["Main" => m])
+
+        XLSX.openxlsx(work) do xf
+            # Untouched sheet preserved
+            @test "Other" in XLSX.sheetnames(xf)
+            @test xf["Other"][1, 1] == "untouched"
+            @test xf["Other"][2, 1] == "stays"
+
+            s = xf["Main"]
+            @test s[1, 1] == "/Key"
+            @test s[1, 2] == "/Name"
+            @test s[1, 3] == "/Note"
+            @test s[2, 1] == 1
+            @test s[2, 2] == "Apricot"
+            @test ismissing(s[2, 3])
+            # Row 3 is outside the new matrix — must survive verbatim
+            @test s[3, 1] == 2
+            @test s[3, 2] == "Banana"
+            @test s[3, 3] == "yellow"
+        end
+
+        # Second write: append a brand-new sheet to the same file. Existing
+        # sheets ("Main", "Other") must not be disturbed.
+        m_new = Matrix{Any}(missing, 1, 1)
+        m_new[1, 1] = "fresh"
+        json_to_xl_write(work, ["NewSheet" => m_new])
+        XLSX.openxlsx(work) do xf
+            names = XLSX.sheetnames(xf)
+            @test "NewSheet" in names
+            @test "Other" in names
+            @test "Main" in names
+            @test xf["NewSheet"][1, 1] == "fresh"
+            @test xf["Main"][2, 2] == "Apricot"
+            @test xf["Other"][1, 1] == "untouched"
+        end
+    end
+
     @testset "json_to_xl_worksheet" begin
         init_project(project_path)
         out_dir = GAMEENV["OUT"]
@@ -265,7 +337,7 @@ using XLSX
             json_to_xl_table("Items")
             @test isfile(items_path)
             XLSX.openxlsx(items_path) do xf
-                @test Set(XLSX.sheetnames(xf)) == Set(["Weapon", "Armour", "Accessory"])
+                @test issubset(Set(["Weapon", "Armour", "Accessory"]), Set(XLSX.sheetnames(xf)))
                 @test xf["Weapon"][1, 1] == "/Key"
                 @test xf["Weapon"][1, 2] == "/\$Name"
                 @test xf["Weapon"][2, 1] == 1
