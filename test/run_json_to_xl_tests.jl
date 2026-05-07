@@ -1,133 +1,12 @@
 using GameDataManager
 using JSON, JSONPointer
 using OrderedCollections
-using DelimitedFiles
-using Test 
+using Test
 
 import GameDataManager.GAMEENV
 
 project_path = joinpath(@__DIR__, "project")
-@testset "init_project tests" begin
-
-    config_file = joinpath(project_path, "config.json")
-    JSON.parsefile(config_file)
-    config_json = JSON.parsefile(config_file; dicttype=OrderedDict{String,Any}, use_mmap=false)
-
-    GDMconfig = init_project(project_path)
-    @test GDMconfig.data == config_json
-end
-
-
-@testset "Read XLSXTable" begin 
-    wb = GameDataManager.loadtable("Items")
-    wb2 = GameDataManager.Table("items")
-
-    @test wb == wb2
-    @test basename(wb) == "Items.xlsx"
-    @test normpath(dirname(wb)) == normpath(joinpath(project_path, "xlsx"))
-    @test GameDataManager.sheetnames(wb) == ["Weapon", "Armour", "Accessory"]
-end
-
-@testset "Export to JSON" begin 
-    xl()
-    dir = GAMEENV["OUT"]
-    @test isfile(joinpath(dir, "TestData_Column.json"))
-    @test isfile(joinpath(dir, "TestData_Array.json"))
-    @test isfile(joinpath(dir, "TestData_Object.json"))
-    @test isfile(joinpath(dir, "TestData_Csv.csv"))
-    @test isfile(joinpath(dir, "TestData_Tsv.tsv"))
-    @test isfile(joinpath(dir, "Items_Weapon.json"))
-    @test isfile(joinpath(dir, "Items_Armour.json"))
-    @test isfile(joinpath(dir, "Items_Accessory.json"))
-
-    # Data Structure 
-    coldata = JSON.parsefile(joinpath(dir, "TestData_Column.json"); dicttype=OrderedDict)
-    @test length(coldata) == 1
-    @test coldata[1]["TimeZone"] == "GMT+0"
-    @test collect(keys(coldata[1]["Sun"])) == ["Rise", "Set"]
-    @test coldata[1]["SoundProfile"]["MasterVolume"] == 90
-    @test isa(coldata[1]["ProfileSpecificGameProfile"]["Invert"], AbstractDict)
-
-    arrdata = JSON.parsefile(joinpath(dir, "TestData_Array.json"); dicttype=OrderedDict)
-    for row in arrdata 
-        @test isa(row["Integers"], AbstractArray)
-        @test isa(row["Numbers"], AbstractArray)
-        @test isa(row["Sepciality"], AbstractArray)
-        @test all(isa.(row["Integers"], Integer))
-        @test all(isa.(row["Numbers"], Float64))
-        @test all(isa.(row["Sepciality"], String))
-    end
-
-    objdata = JSON.parsefile(joinpath(dir, "TestData_Object.json"); dicttype=OrderedDict)
-    for row in objdata 
-        @test isa(row["Attributes"], AbstractDict)
-        @test isa(row["Speciality"], AbstractDict)
-    end
-end 
-
-
-@testset "Localization" begin 
-    # localize files 
-    @test isfile(joinpath(GAMEENV["LOCALIZE"], "Items_Weapon_eng.json"))
-    @test isfile(joinpath(GAMEENV["LOCALIZE"], "Items_Armour_eng.json"))
-    @test isfile(joinpath(GAMEENV["LOCALIZE"], "Items_Accessory_eng.json"))
-
-    # Put all localzized file together, make sure there is no key conflict
-    localizedata = OrderedDict{String, String}()
-    length_check = 0
-    for f in readdir(GAMEENV["LOCALIZE"]; join = true)
-        objdata = JSON.parsefile(f; dicttype=OrderedDict)
-        length_check += length(objdata)
-        merge!(localizedata, objdata)
-    end
-    @test length(localizedata) == length_check
-
-    # Read the localization Key 
-    GAMEENV["OUT"]
-
-    wb = GameDataManager.Table("Items")
-    wb.localizedata["Weapon"]
-
-    for sname in GameDataManager.sheetnames(wb)
-        outfile = GameDataManager.parsefile_outjson(wb, sname)
-        localizedata= wb.localizedata[sname]
-        for row in outfile
-            for k in keys(row)
-                if GameDataManager.islocalize_column(k)
-                    k2 = replace(k, "\$" => "")
-                    # Does not generate localize column if the value is empty 
-                    if haskey(row, k2)
-                        @test haskey(localizedata, row[k2])
-                        @test localizedata[row[k2]] == row[k]
-                    end
-                end
-            end
-        end
-    end
-end
-
-
-@testset "JSON Schema" begin 
-    wb = GameDataManager.Table("Items")
-
-end
-
-
-@testset "Export to CSV, TSV" begin
-    dir = GAMEENV["OUT"]
-    csvdata = readdlm(joinpath(dir, "TestData_Csv.csv"), ',')
-    @test csvdata[2, 3] == "[Str;50]"
-    @test csvdata[2, 4] == "{\"Value1\":Apple;\"Value2\":Grape}"
-
-
-    tsvdata = readdlm(joinpath(dir, "TestData_Tsv.tsv"), '\t')
-    @test tsvdata[3, 3] == "[Dex;10]"
-    @test tsvdata[3, 4] == "{\"Value1\":Gold;\"Value2\":Silver}"
-    @test size(csvdata) == size(tsvdata) == (6,5)
-    # Localization keys are different
-    @test csvdata[:, 1:4] == tsvdata[:, 1:4]
-end
-
+init_project(project_path)
 
 import GameDataManager: json_to_xl, json_to_xl_table, json_to_xl_worksheet,
     json_to_xl_localize!, json_to_xl_matrix, json_to_xl_row, json_to_xl_headers,
@@ -147,40 +26,29 @@ using XLSX
         @test json_to_xl_cell([1, 2, 3], ';') == "1;2;3"
         @test json_to_xl_cell(["a", "b"], ',') == "a,b"
         @test json_to_xl_cell([1, 2, 3], '|') == "1|2|3"
-        # Nested dict → mini-syntax
         d = OrderedDict("Value1" => "Apple", "Value2" => "Grape")
         @test json_to_xl_cell(d, ';') == "{\"Value1\":Apple;\"Value2\":Grape}"
-        # Fallback for arbitrary types via string()
         @test json_to_xl_cell(:sym, ';') == "sym"
-        # Array containing missing/nothing → empty string elements
         @test json_to_xl_cell([1, missing, 3], ';') == "1;;3"
         @test json_to_xl_cell([1, nothing, 3], ';') == "1;;3"
-        # Nested array inside array
         @test json_to_xl_cell([[1, 2], [3]], ';') == "1;2;3"
-        # Dict containing array
         d2 = OrderedDict("a" => [1, 2])
         @test json_to_xl_cell(d2, ';') == "{\"a\":1;2}"
     end
 
     @testset "json_to_xl_headers" begin
-        # Empty input
         @test json_to_xl_headers(Any[]) == String[]
-        # Flat row
         rows = [OrderedDict("A" => 1, "B" => 2)]
         @test json_to_xl_headers(rows) == ["/A", "/B"]
-        # Nested dict
         rows = [OrderedDict("Sun" => OrderedDict("Rise" => 6, "Set" => 18), "TZ" => "GMT")]
         @test json_to_xl_headers(rows) == ["/Sun/Rise", "/Sun/Set", "/TZ"]
-        # Array of scalars → single leaf path
         rows = [OrderedDict("Nums" => [1, 2, 3])]
         @test json_to_xl_headers(rows) == ["/Nums"]
-        # Optional fields union (first-seen order, no drops)
         rows = [
             OrderedDict("A" => 1, "B" => 2),
             OrderedDict("A" => 3, "C" => 4),
         ]
         @test json_to_xl_headers(rows) == ["/A", "/B", "/C"]
-        # Empty inner dict → emit prefix (avoid losing the column)
         rows = [OrderedDict("X" => OrderedDict{String,Any}())]
         @test json_to_xl_headers(rows) == ["/X"]
     end
@@ -190,18 +58,12 @@ using XLSX
         pairs = json_to_xl_row(row)
         @test first.(pairs) == ["/A", "/B/C"]
         @test last.(pairs) == [1, 2]
-        # Missing path returns missing
-        row2 = OrderedDict("A" => 1)
-        # Build a row with optional field via headers union
         rows = [OrderedDict("A" => 1, "B" => 2), OrderedDict("A" => 3)]
-        # Verify _get_at_path indirectly by using headers + _get_at_path through json_to_xl_matrix
         m = json_to_xl_matrix(rows, NamedTuple())
-        # row 2 of data has missing for B (header /B)
         @test ismissing(m[3, 2])
     end
 
     @testset "json_to_xl_matrix" begin
-        # row_oriented=true (default), start_line=1
         rows = [
             OrderedDict("A" => 1, "B" => "x"),
             OrderedDict("A" => 2, "B" => "y"),
@@ -213,16 +75,14 @@ using XLSX
         @test m[2, 1] == 1 && m[2, 2] == "x"
         @test m[3, 1] == 2 && m[3, 2] == "y"
 
-        # start_line=3 (two blank rows above the header)
         m2 = json_to_xl_matrix(rows, (start_line=3,))
         @test size(m2) == (4, 2)
         @test ismissing(m2[1, 1]) && ismissing(m2[2, 1])
         @test m2[3, 1] == "/A"
         @test m2[4, 1] == 1
 
-        # row_oriented=false: headers in col 1, records in cols 2…
         m3 = json_to_xl_matrix(rows, (row_oriented=false,))
-        @test size(m3) == (2, 3)  # 2 headers, 1 header col + 2 records
+        @test size(m3) == (2, 3)
         @test m3[1, 1] == "/A"
         @test m3[2, 1] == "/B"
         @test m3[1, 2] == 1
@@ -230,7 +90,6 @@ using XLSX
         @test m3[2, 2] == "x"
         @test m3[2, 3] == "y"
 
-        # row_oriented=false + start_line=3 (TestData_Column shape, 1 record)
         m4 = json_to_xl_matrix([rows[1]], (start_line=3, row_oriented=false))
         @test size(m4) == (4, 2)
         @test ismissing(m4[1, 1]) && ismissing(m4[2, 1])
@@ -239,29 +98,22 @@ using XLSX
         @test m4[4, 1] == "/B"
         @test m4[4, 2] == "x"
 
-        # Custom delim for arrays
         rows_arr = [OrderedDict("Nums" => [1, 2, 3])]
         m5 = json_to_xl_matrix(rows_arr, (delim='|',))
         @test m5[2, 1] == "1|2|3"
 
-        # Dict-form kwargs (string keys) — what config.json supplies before namedtuple()
         m6 = json_to_xl_matrix(rows, Dict("start_line" => 2))
         @test size(m6) == (4, 2)
         @test m6[2, 1] == "/A"
     end
 
     @testset "json_to_xl_localize!" begin
-        # Build a fake XLSXTable just enough for localize_key + out lookups
-        config_path = joinpath(project_path, "config.json")
-        # Reload to keep state clean
         init_project(project_path)
-
         sym = :Items
         tb = CACHE["config"].tables[sym]
         sheetname = "Weapon"
         @test tb.localize_key[sheetname] == "/Key"
 
-        # Write a synthetic localization JSON
         loc_dir = GAMEENV["LOCALIZE"]
         mkpath(loc_dir)
         loc_file = joinpath(loc_dir, "Items_Weapon_eng.json")
@@ -278,20 +130,16 @@ using XLSX
             ),
             OrderedDict(
                 "Key" => "WPN002",
-                "\$Description" => "",  # empty → no key column
+                "\$Description" => "",
             ),
         ]
         json_to_xl_localize!(rows, tb, sheetname)
-        # Row 1: $Description refreshed from localization file; Description deleted
         @test rows[1]["\$Description"] == "Translated text"
         @test !haskey(rows[1], "Description")
         @test rows[1]["Key"] == "WPN001"
-        # Row 2: only $Description present → unchanged
         @test rows[2]["\$Description"] == ""
         @test rows[2]["Key"] == "WPN002"
 
-        # Sheet without localize_key returns rows untouched
-        # Use TestData "Array" which has no localize key
         sym2 = :TestData
         tb2 = CACHE["config"].tables[sym2]
         @test ismissing(tb2.localize_key["Array"])
@@ -300,7 +148,6 @@ using XLSX
         json_to_xl_localize!(rows_no_loc, tb2, "Array")
         @test rows_no_loc == before
 
-        # Missing localization file → falls back to existing $col text
         rm(loc_file)
         rows3 = [OrderedDict(
             "Key" => "WPN999",
@@ -311,7 +158,6 @@ using XLSX
         @test rows3[1]["\$Description"] == "fallback"
         @test !haskey(rows3[1], "Description")
 
-        # Recursion into nested dicts
         rows4 = [OrderedDict(
             "Outer" => OrderedDict(
                 "\$Inner" => "x",
@@ -323,7 +169,7 @@ using XLSX
         @test rows4[1]["Outer"]["\$Inner"] == "x"
     end
 
-    @testset "json_to_xl_write + round-trip via XLSX read" begin
+    @testset "json_to_xl_write" begin
         tmpdir = mktempdir()
         path = joinpath(tmpdir, "out.xlsx")
 
@@ -357,7 +203,6 @@ using XLSX
         init_project(project_path)
         out_dir = GAMEENV["OUT"]
         mkpath(out_dir)
-        # Synthesize a JSON file matching what xl() would produce for Items.Weapon
         weapon = [
             OrderedDict(
                 "Key" => 1,
@@ -383,19 +228,16 @@ using XLSX
         tb = CACHE["config"].tables[:Items]
         sn, m = json_to_xl_worksheet(tb, "Weapon")
         @test sn == "Weapon"
-        @test size(m, 1) == 3   # header + 2 data rows
+        @test size(m, 1) == 3
         @test m[1, 1] == "/Key"
         @test m[1, 2] == "/\$Name"
         @test m[2, 1] == 1 && m[2, 2] == "Sword"
         @test m[3, 1] == 2 && m[3, 2] == "Axe"
-        # Description (key column) was dropped → only 2 columns
         @test size(m, 2) == 2
 
-        # Wrong extension → ArgumentError (Csv sheet has .csv output)
         @test_throws ArgumentError json_to_xl_worksheet(
             CACHE["config"].tables[:TestData], "Csv")
 
-        # Missing JSON file → ArgumentError
         rm(joinpath(out_dir, "Items_Weapon.json"))
         @test_throws ArgumentError json_to_xl_worksheet(tb, "Weapon")
     end
@@ -407,8 +249,7 @@ using XLSX
         mkpath(out_dir)
         mkpath(loc_dir)
 
-        # Synthesize JSON for all 3 sheets in Items.xlsx
-        for (sheet, key) in [("Weapon", "WPN"), ("Armour", "ARM"), ("Accessory", "ACC")]
+        for sheet in ("Weapon", "Armour", "Accessory")
             data = [OrderedDict(
                 "Key" => 1,
                 "\$Name" => "$(sheet)Item",
@@ -418,13 +259,11 @@ using XLSX
                   JSON.json(OrderedDict{String,Any}(), 2))
         end
 
-        # Take a backup of the original xlsx so we can restore it after the test
         items_path = joinpath(GAMEENV["XLSX"], "Items.xlsx")
         backup = read(items_path)
         try
             json_to_xl_table("Items")
             @test isfile(items_path)
-            # Verify the file we wrote contains the expected sheets
             XLSX.openxlsx(items_path) do xf
                 @test Set(XLSX.sheetnames(xf)) == Set(["Weapon", "Armour", "Accessory"])
                 @test xf["Weapon"][1, 1] == "/Key"
@@ -433,23 +272,17 @@ using XLSX
                 @test xf["Weapon"][2, 2] == "WeaponItem"
             end
 
-            # json_to_xl(fname) — single workbook entry point, fuzzy match
-            json_to_xl("items"; strict=true)  # lowercase still resolves
+            json_to_xl("items"; strict=true)
             @test isfile(items_path)
 
-            # strict=false swallows errors, strict=true rethrows
             @test_throws ArgumentError json_to_xl("NoSuchFile"; strict=true)
-            # non-strict returns nothing without throwing
             @test json_to_xl("NoSuchFile"; strict=false) === nothing
 
-            # json_to_xl() — all configured workbooks; some will fail (Character has no JSON,
-            # NotExistFile has no entry); strict=false collects errors and returns nothing.
             @test json_to_xl(; strict=false) === nothing
         finally
             write(items_path, backup)
         end
 
-        # No-files branch: empty config → "nothing to import"
         empty_cfg = mktempdir()
         cfg = OrderedDict(
             "name" => "Empty",
@@ -463,9 +296,6 @@ using XLSX
         init_project(empty_cfg)
         @test json_to_xl(; strict=false) === nothing
 
-        # Restore the original test project for any later tests
         init_project(project_path)
     end
 end
-
-

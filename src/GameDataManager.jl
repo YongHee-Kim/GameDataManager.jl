@@ -10,7 +10,7 @@ using REPL.TerminalMenus
 using Term
 using XLSXasJSON
 
-export init_project, xl, xlookup
+export init_project, xl, xlookup, json_to_xl
 
 
 include("abstractmeta.jl")
@@ -23,6 +23,7 @@ include("localizer.jl")
 include("schema.jl")
 include("show.jl")
 include("utils.jl")
+include("json_to_xl.jl")
 
 
 end # module

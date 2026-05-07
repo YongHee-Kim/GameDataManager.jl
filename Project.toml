@@ -1,7 +1,7 @@
 name = "GameDataManager"
 uuid = "7e4809e4-a3a8-4b3b-a5e8-a128d6c0d43e"
 authors = ["YongHeeKim <masterplanf@gmail.com>"]
-version = "0.1.2"
+version = "0.2.0"
 
 [deps]
 JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
@@ -12,6 +12,7 @@ PrettyTables = "08abe8d2-0d0c-5749-adfa-8a2ac140af0d"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 REPL = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
 Term = "22787eb5-b846-44ae-b979-8e399b8463ab"
+XLSX = "fdbf4ff8-1666-58a4-91e7-1b58723a45e0"
 XLSXasJSON = "8c9e00cc-ccf1-11e8-3de6-5b028f480d9e"
 
 [compat]
@@ -21,6 +22,7 @@ JSONSchema = "1"
 OrderedCollections = "1"
 PrettyTables = "3"
 Term = "2"
+XLSX = "0.6"
 XLSXasJSON = "0.6"
 julia = "1.6"
 
