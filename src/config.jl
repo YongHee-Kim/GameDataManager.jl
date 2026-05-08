@@ -44,7 +44,7 @@ It does the following:
 - Consider hot loading xlsx tables when the file is requested. At least allow the user to set the hot loading file for maning large files easier.
 """
 function loaddata!(x::ConfigData)
-    x.data = JSON.parsefile(filepath(x); dicttype=OrderedDict{String,Any}, use_mmap=false)
+    x.data = JSON.parsefile(filepath(x); dicttype=OrderedDict{String,Any})
 
     # create environment paths
     for (k, path) in x.data["environment"]

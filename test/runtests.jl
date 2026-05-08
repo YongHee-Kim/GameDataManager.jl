@@ -11,7 +11,7 @@ project_path = joinpath(@__DIR__, "project")
 
     config_file = joinpath(project_path, "config.json")
     JSON.parsefile(config_file)
-    config_json = JSON.parsefile(config_file; dicttype=OrderedDict{String,Any}, use_mmap=false)
+    config_json = JSON.parsefile(config_file; dicttype=OrderedDict{String,Any})
 
     GDMconfig = init_project(project_path)
     @test GDMconfig.data == config_json
@@ -66,7 +66,36 @@ end
 end 
 
 
-@testset "Localization" begin 
+@testset "Post-processing kwargs" begin
+    dir = GAMEENV["OUT"]
+
+    drop = JSON.parsefile(joinpath(dir, "PostProcess_OmitNull.json"); dicttype=OrderedDict)
+    @test length(drop) == 3
+    # Row 1: both objects survive
+    @test length(drop[1]["ExpectedReward"]) == 2
+    @test drop[1]["ExpectedReward"][1]["GameplayTag"] == "Id.Loot.A"
+    @test drop[1]["ExpectedReward"][2]["GameplayTag"] == "Id.Loot.B"
+    # Row 2: second object is fully null and is dropped
+    @test length(drop[2]["ExpectedReward"]) == 1
+    @test drop[2]["ExpectedReward"][1]["GameplayTag"] == "Id.Loot.X"
+    # Row 3: both elements fully null -> empty array, key preserved
+    @test drop[3]["ExpectedReward"] == []
+
+    empt = JSON.parsefile(joinpath(dir, "PostProcess_EmptyValue.json"); dicttype=OrderedDict)
+    @test length(empt) == 3
+    # Row 1: real data untouched
+    @test empt[1]["Description"] == "First item"
+    @test empt[1]["Requirements"] == 10
+    # Row 2: both empty cells get the configured replacements
+    @test empt[2]["Description"] == ""
+    @test empt[2]["Requirements"] == 0
+    # Row 3: only Requirements is empty; Description stays as parsed
+    @test empt[3]["Description"] == "Third"
+    @test empt[3]["Requirements"] == 0
+end
+
+
+@testset "Localization" begin
     # localize files 
     @test isfile(joinpath(GAMEENV["LOCALIZE"], "Items_Weapon_eng.json"))
     @test isfile(joinpath(GAMEENV["LOCALIZE"], "Items_Armour_eng.json"))

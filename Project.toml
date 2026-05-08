@@ -16,15 +16,15 @@ XLSX = "fdbf4ff8-1666-58a4-91e7-1b58723a45e0"
 XLSXasJSON = "8c9e00cc-ccf1-11e8-3de6-5b028f480d9e"
 
 [compat]
-JSON = "0.21"
+JSON = "1.5, 1.6"
 JSONPointer = "^0.5"
 JSONSchema = "1"
 OrderedCollections = "1"
 PrettyTables = "3"
 Term = "2"
-XLSX = "0.10, 0.11"
-XLSXasJSON = "0.6.0"
-julia = "1.6"
+XLSX = "0.11, 0.12"
+XLSXasJSON = "^0.6"
+julia = "1.10"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"

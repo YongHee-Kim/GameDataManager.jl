@@ -81,11 +81,13 @@ function export_xlsxtable(fname)
     tb = loadtable(fname)
 
     for s in sheetnames(tb)
-        fname = tb.out[s]
-        export_worksheet(fname, tb.data[s])
+        out = tb.out[s]
+        jws = tb.data[s]
+        _apply_postprocess!(jws, get(tb.postprocess, s, Dict{String,Any}()))
+        export_worksheet(out, jws)
         localizedata = tb.localizedata[s]
         if !ismissing(localizedata)
-            write_localize(fname, localizedata)
+            write_localize(out, localizedata)
         end
     end
     nothing
@@ -122,6 +124,7 @@ function export_worksheet(tb::XLSXTable, sheetname)
     fname = tb.out[sheetname]
     println("『", basename(tb), "』")
 
+    _apply_postprocess!(ws, get(tb.postprocess, sheetname, Dict{String,Any}()))
     export_worksheet(fname, ws)
     localizedata = tb.localizedata[sheetname]
     if !ismissing(localizedata)
@@ -197,4 +200,33 @@ function write_localize(fname, localizedata)
         print("  ⨽Localize => ")
         print(normpath(io), "\n")
     end
+end
+
+
+_pointer_str(k::AbstractString) = startswith(k, "/") ? k : "/" * k
+_isnullish(v) = v === missing || v === nothing
+
+function apply_empty_values!(jws::JSONWorksheet, mapping::AbstractDict)
+    for (rawkey, replacement) in mapping
+        ptr = JSONPointer.Pointer(_pointer_str(String(rawkey)))
+        for row in jws.data
+            haskey(row, ptr) || continue
+            v = row[ptr]
+            if _isnullish(v)
+                row[ptr] = replacement
+            end
+        end
+    end
+    return jws
+end
+
+function _apply_postprocess!(jws::JSONWorksheet, opts)
+    isempty(opts) && return jws
+    if haskey(opts, "empty_value")
+        apply_empty_values!(jws, opts["empty_value"])
+    end
+    if get(opts, "omit_null_object", false) === true
+        XLSXasJSON.omit_null_objects!(jws)
+    end
+    return jws
 end

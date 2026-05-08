@@ -70,6 +70,27 @@
                 }
             ]
         },
+        "PostProcess.xlsx": {
+            "workSheets": [
+                {
+                    "name": "OmitNull",
+                    "out": "PostProcess_OmitNull.json",
+                    "kwargs": {
+                        "omit_null_object": true
+                    }
+                },
+                {
+                    "name": "EmptyValue",
+                    "out": "PostProcess_EmptyValue.json",
+                    "kwargs": {
+                        "empty_value": {
+                            "Description": "",
+                            "Requirements": 0
+                        }
+                    }
+                }
+            ]
+        },
         "Folder/Character.xlsx": {
             "workSheets": [
                 {

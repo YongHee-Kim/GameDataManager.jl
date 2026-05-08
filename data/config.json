@@ -113,6 +113,14 @@
                         "delim": {
                             "type": "string",
                             "description": "a String or Regrex that of deliminator for converting single cell to array, default value is `;`"
+                        },
+                        "omit_null_object": {
+                            "type": "boolean",
+                            "description": "drop elements of object arrays whose every field is null"
+                        },
+                        "empty_value": {
+                            "type": "object",
+                            "description": "per-column replacement for empty cells; keys are column names or JSONPointers, values are the substitute"
                         }
                     },
                     "additionalProperties": false

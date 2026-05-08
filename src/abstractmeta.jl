@@ -35,7 +35,7 @@ function SchemaData(file)
     SchemaData(file, missing, 0.)
 end
 function loaddata!(x::SchemaData)
-    x.data = JSONSchema.Schema(JSON.parsefile(x.filepath; use_mmap=false))
+    x.data = JSONSchema.Schema(JSON.parsefile(x.filepath))
     x.mtime = mtime(x.filepath)
     return x
 end

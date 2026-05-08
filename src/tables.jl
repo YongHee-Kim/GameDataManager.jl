@@ -30,6 +30,8 @@ wrapper around JSONWorkbook
 # Note
 consider providing option to convert `JSONWorksheet` to `IndexedTables.jl` because the Unreal Engine **DataTable** requires `key` column   
 """
+const POSTPROCESS_KEYS = ("omit_null_object", "empty_value")
+
 mutable struct XLSXTable{FileName} <: Table
     data::Union{JSONWorkbook, String}
     localizedata::Dict{String, Any}
@@ -37,6 +39,7 @@ mutable struct XLSXTable{FileName} <: Table
     schemas::Dict{String, Any} # JSONSchema per sheet
     localize_key::Dict{String, Any}
     kwargs::Dict{String, Any}
+    postprocess::Dict{String, Any}
     mtime::Float64
 end
 function XLSXTable(file, config)
@@ -47,28 +50,38 @@ function XLSXTable(file, config)
     localize_key = Dict{String, Any}()
     localizedata = Dict{String, Any}()
     kwargs = Dict{String, Any}()
+    postprocess = Dict{String, Any}()
 
     for row in config["workSheets"]
         sheetname = row["name"]
         out[sheetname] = row["out"]
-        kwargs[sheetname] = begin 
-            haskey(row, "kwargs") ? namedtuple(row["kwargs"]) : namedtuple(Dict{String,Any}())
+        raw = haskey(row, "kwargs") ? row["kwargs"] : Dict{String,Any}()
+        loader_kwargs = Dict{String,Any}()
+        pp_kwargs = Dict{String,Any}()
+        for (k, v) in raw
+            if k in POSTPROCESS_KEYS
+                pp_kwargs[k] = v
+            else
+                loader_kwargs[k] = v
+            end
         end
+        kwargs[sheetname] = namedtuple(loader_kwargs)
+        postprocess[sheetname] = pp_kwargs
 
-        # localizer 
-        localize_key[sheetname] = begin 
-            loc = get(row, "localize", missing) 
-            # default: uses row number for localize key 
+        # localizer
+        localize_key[sheetname] = begin
+            loc = get(row, "localize", missing)
+            # default: uses row number for localize key
             if !ismissing(loc)
                 loc = get(loc, "keycolumn", "")
             end
-            loc 
+            loc
         end
         localizedata[sheetname] = missing
-        # JSONSchema 
+        # JSONSchema
         schema[sheetname] = lookfor_jsonschema(row["out"])
     end
-    XLSXTable{FileName}(file, localizedata, out, schema, localize_key, kwargs, 0.)
+    XLSXTable{FileName}(file, localizedata, out, schema, localize_key, kwargs, postprocess, 0.)
 end
 
 

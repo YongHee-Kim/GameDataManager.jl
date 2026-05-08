@@ -128,7 +128,7 @@ function json_to_xl_worksheet(tb::XLSXTable, sheetname)
     if !isfile(filepath)
         throw(ArgumentError("$filepath not found — run xl() first to produce JSON before importing"))
     end
-    rows = JSON.parsefile(filepath; dicttype=OrderedDict{String, Any}, use_mmap=false)
+    rows = JSON.parsefile(filepath; dicttype=OrderedDict{String, Any})
     json_to_xl_localize!(rows, tb, sheetname)
 
     matrix = json_to_xl_matrix(rows, tb.kwargs[sheetname])
@@ -156,7 +156,7 @@ function json_to_xl_localize!(rows, tb::XLSXTable, sheetname)
     loc_fname = splitext(out_fname)[1] * "_$(base).json"
     loc_path = joinpath(GAMEENV["LOCALIZE"], loc_fname)
     localizedata = if isfile(loc_path)
-        JSON.parsefile(loc_path; dicttype=OrderedDict{String, Any}, use_mmap=false)
+        JSON.parsefile(loc_path; dicttype=OrderedDict{String, Any})
     else
         OrderedDict{String, Any}()
     end
