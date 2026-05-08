@@ -73,11 +73,11 @@ end
     @test length(drop) == 3
     # Row 1: both objects survive
     @test length(drop[1]["ExpectedReward"]) == 2
-    @test drop[1]["ExpectedReward"][1]["GameplayTag"] == "Id.Loot.A"
-    @test drop[1]["ExpectedReward"][2]["GameplayTag"] == "Id.Loot.B"
+    @test drop[1]["ExpectedReward"][1]["Id"] == "Id.Loot.A"
+    @test drop[1]["ExpectedReward"][2]["Id"] == "Id.Loot.B"
     # Row 2: second object is fully null and is dropped
     @test length(drop[2]["ExpectedReward"]) == 1
-    @test drop[2]["ExpectedReward"][1]["GameplayTag"] == "Id.Loot.X"
+    @test drop[2]["ExpectedReward"][1]["Id"] == "Id.Loot.X"
     # Row 3: both elements fully null -> empty array, key preserved
     @test drop[3]["ExpectedReward"] == []
 

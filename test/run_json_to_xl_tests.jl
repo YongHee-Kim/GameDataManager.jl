@@ -51,6 +51,20 @@ using XLSX
         @test json_to_xl_headers(rows) == ["/A", "/B", "/C"]
         rows = [OrderedDict("X" => OrderedDict{String,Any}())]
         @test json_to_xl_headers(rows) == ["/X"]
+        # Empty array in one row must not duplicate a parent column when other
+        # rows expand the same prefix into children.
+        rows = [
+            OrderedDict("R" => [OrderedDict("Id" => "A", "N" => 1),
+                                OrderedDict("Id" => "B", "N" => 2)]),
+            OrderedDict("R" => Any[]),
+        ]
+        @test json_to_xl_headers(rows) == ["/R/1/Id", "/R/1/N", "/R/2/Id", "/R/2/N"]
+        # Scalar string array: collapse when joining round-trips, expand when
+        # any element already contains the delim character.
+        rows = [OrderedDict("S" => ["Power", "2"])]
+        @test json_to_xl_headers(rows) == ["/S"]
+        rows = [OrderedDict("S" => ["a;b", "c", "d"])]
+        @test json_to_xl_headers(rows) == ["/S/1", "/S/2", "/S/3"]
     end
 
     @testset "json_to_xl_row" begin

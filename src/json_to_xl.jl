@@ -80,6 +80,12 @@ function json_to_xl_table(fname)
 
     sheets = Pair{String, Matrix{Any}}[]
     for s in sheetnames(tb)
+        # Bulk import covers every configured sheet, but only .json outputs
+        # round-trip; .csv/.tsv sheets are silently skipped here. Explicit
+        # `json_to_xl_worksheet(tb, s)` calls still error on non-json.
+        if lowercase(splitext(tb.out[s])[2]) != ".json"
+            continue
+        end
         push!(sheets, json_to_xl_worksheet(tb, s))
     end
 
@@ -201,42 +207,62 @@ end
 _localize_node!(node, localizedata) = node
 
 """
-    json_to_xl_headers(rows) -> Vector{String}
+    json_to_xl_headers(rows; delim=';') -> Vector{String}
 
 Walk every row and return the union of leaf paths in first-seen order. Paths
-are JSONPointer-style (`"/Sun/Rise"`); arrays of scalars are kept as a single
-leaf path (the array becomes one delimited cell).
+are JSONPointer-style (`"/Sun/Rise"`). Scalar arrays collapse to a single
+leaf path when joining with `delim` round-trips losslessly; if any string
+element already contains `delim`, the array is expanded into indexed paths
+(`/X/1`, `/X/2`, …) so the original Excel layout is preserved.
 """
-function json_to_xl_headers(rows)
+function json_to_xl_headers(rows; delim=';')
     seen = OrderedDict{String, Bool}()
     for row in rows
-        _collect_paths!("", row, seen)
+        _collect_paths!("", row, seen, delim)
     end
-    return collect(keys(seen))
+    paths = collect(keys(seen))
+    # An empty array/dict in one row collapses its prefix to a leaf path; if
+    # another row expands the same prefix into children, drop the parent so we
+    # don't emit both `/X` and `/X/1/...` columns.
+    return filter(p -> !any(q -> q != p && startswith(q, p * "/"), paths), paths)
 end
 
-function _collect_paths!(prefix, node::AbstractDict, seen)
+function _collect_paths!(prefix, node::AbstractDict, seen, delim)
     if isempty(node) && !isempty(prefix)
         seen[prefix] = true
         return
     end
     for (k, v) in node
         path = prefix * "/" * String(k)
-        _collect_paths!(path, v, seen)
+        _collect_paths!(path, v, seen, delim)
     end
 end
-function _collect_paths!(prefix, node::AbstractArray, seen)
-    if isempty(node) || all(x -> !isa(x, AbstractDict) && !isa(x, AbstractArray), node)
+function _collect_paths!(prefix, node::AbstractArray, seen, delim)
+    if isempty(node)
         seen[prefix] = true
+        return
+    end
+    if all(x -> !isa(x, AbstractDict) && !isa(x, AbstractArray), node)
+        # Scalar array: collapse to one delimited cell when joining round-trips
+        # losslessly. If any element string already contains `delim`, expand
+        # into indexed paths to avoid conflating the joiner with content
+        # (matches Excel's `/X/1`, `/X/2` layout for split-string columns).
+        if any(x -> isa(x, AbstractString) && occursin(delim, x), node)
+            for (i, el) in enumerate(node)
+                _collect_paths!(prefix * "/" * string(i), el, seen, delim)
+            end
+        else
+            seen[prefix] = true
+        end
     else
         # 1-based array indices to match JSONPointer.jl's non-standard indexing
         # (it explicitly rejects "/0/..." paths). See JSONPointer/src/pointer.jl.
         for (i, el) in enumerate(node)
-            _collect_paths!(prefix * "/" * string(i), el, seen)
+            _collect_paths!(prefix * "/" * string(i), el, seen, delim)
         end
     end
 end
-function _collect_paths!(prefix, node, seen)
+function _collect_paths!(prefix, node, seen, _delim)
     seen[prefix] = true
 end
 
@@ -245,8 +271,8 @@ end
 
 Flatten one row into `(header, leaf_value)` pairs in column order.
 """
-function json_to_xl_row(row::AbstractDict)
-    headers = json_to_xl_headers([row])
+function json_to_xl_row(row::AbstractDict; delim=';')
+    headers = json_to_xl_headers([row]; delim=delim)
     return [h => _get_at_path(row, h) for h in headers]
 end
 
@@ -283,10 +309,10 @@ Honours `start_line` (blank rows above the header), `row_oriented`
 (default `;`) for delimited array cells.
 """
 function json_to_xl_matrix(rows, kwargs)
-    headers = json_to_xl_headers(rows)
     start_line = _kwget(kwargs, :start_line, 1)
     row_oriented = _kwget(kwargs, :row_oriented, true)
     delim = _kwget(kwargs, :delim, ';')
+    headers = json_to_xl_headers(rows; delim=delim)
 
     if row_oriented
         ncols = max(length(headers), 1)
