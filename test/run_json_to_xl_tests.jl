@@ -65,6 +65,14 @@ using XLSX
         @test json_to_xl_headers(rows) == ["/S"]
         rows = [OrderedDict("S" => ["a;b", "c", "d"])]
         @test json_to_xl_headers(rows) == ["/S/1", "/S/2", "/S/3"]
+        # Existing-header hint forces indexed-array expansion even when the
+        # JSON values would otherwise collapse (Excel column was already laid
+        # out as `Attributes/1`, `Attributes/2`).
+        rows = [OrderedDict("Attributes" => ["Str", 50])]
+        @test json_to_xl_headers(rows) == ["/Attributes"]
+        existing = ["Key", "Attributes/1", "Attributes/2"]
+        @test json_to_xl_headers(rows; existing_headers=existing) ==
+            ["/Attributes/1", "/Attributes/2"]
     end
 
     @testset "json_to_xl_row" begin
@@ -315,8 +323,11 @@ using XLSX
         sn, m = json_to_xl_worksheet(tb, "Weapon")
         @test sn == "Weapon"
         @test size(m, 1) == 3
-        @test m[1, 1] == "/Key"
-        @test m[1, 2] == "/\$Name"
+        # Header row reuses the existing Excel column names (`Key`, `Name`)
+        # rather than the JSONPointer-style paths. `/$Name` matches `Name`
+        # via the `$` localization-source marker normalization.
+        @test m[1, 1] == "Key"
+        @test m[1, 2] == "Name"
         @test m[2, 1] == 1 && m[2, 2] == "Sword"
         @test m[3, 1] == 2 && m[3, 2] == "Axe"
         @test size(m, 2) == 2
@@ -352,8 +363,8 @@ using XLSX
             @test isfile(items_path)
             XLSX.openxlsx(items_path) do xf
                 @test issubset(Set(["Weapon", "Armour", "Accessory"]), Set(XLSX.sheetnames(xf)))
-                @test xf["Weapon"][1, 1] == "/Key"
-                @test xf["Weapon"][1, 2] == "/\$Name"
+                @test xf["Weapon"][1, 1] == "Key"
+                @test xf["Weapon"][1, 2] == "Name"
                 @test xf["Weapon"][2, 1] == 1
                 @test xf["Weapon"][2, 2] == "WeaponItem"
             end

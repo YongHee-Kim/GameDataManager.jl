@@ -137,9 +137,37 @@ function json_to_xl_worksheet(tb::XLSXTable, sheetname)
     rows = JSON.parsefile(filepath; dicttype=OrderedDict{String, Any})
     json_to_xl_localize!(rows, tb, sheetname)
 
-    matrix = json_to_xl_matrix(rows, tb.kwargs[sheetname])
+    # Peek at the existing Excel header row so we can preserve `::type{eltype}`
+    # annotations and the indexed-vs-collapsed array layout when round-tripping.
+    existing_headers = _read_existing_headers(tb, sheetname)
+    matrix = json_to_xl_matrix(rows, tb.kwargs[sheetname]; existing_headers=existing_headers)
     return sheetname => matrix
 end
+
+function _read_existing_headers(tb::XLSXTable, sheetname)
+    path = xlsxpath(tb)
+    isfile(path) || return String[]
+    return XLSX.openxlsx(path) do xf
+        sheetname in XLSX.sheetnames(xf) || return String[]
+        kwargs = tb.kwargs[sheetname]
+        start_line = _kwget(kwargs, :start_line, 1)
+        row_oriented = _kwget(kwargs, :row_oriented, true)
+        sheet = xf[sheetname]
+        if row_oriented
+            row = sheet[start_line, :]
+            return [_to_str(row[j]) for j in 1:length(row)]
+        else
+            col = sheet[:, 1]
+            n = length(col)
+            return start_line > n ? String[] : [_to_str(col[i]) for i in start_line:n]
+        end
+    end
+end
+
+_to_str(::Missing) = ""
+_to_str(::Nothing) = ""
+_to_str(s::AbstractString) = String(s)
+_to_str(x) = string(x)
 
 """
     json_to_xl_localize!(rows, tb::XLSXTable, sheetname) -> rows
@@ -207,18 +235,22 @@ end
 _localize_node!(node, localizedata) = node
 
 """
-    json_to_xl_headers(rows; delim=';') -> Vector{String}
+    json_to_xl_headers(rows; delim=';', existing_headers=String[]) -> Vector{String}
 
 Walk every row and return the union of leaf paths in first-seen order. Paths
 are JSONPointer-style (`"/Sun/Rise"`). Scalar arrays collapse to a single
 leaf path when joining with `delim` round-trips losslessly; if any string
 element already contains `delim`, the array is expanded into indexed paths
-(`/X/1`, `/X/2`, …) so the original Excel layout is preserved.
+(`/X/1`, `/X/2`, …). When `existing_headers` is given, prefixes already
+laid out as indexed columns there (`X/1`, `X/2`, …) are forced to expand
+even if the JSON values would otherwise collapse — this keeps the original
+Excel column structure intact across a round-trip.
 """
-function json_to_xl_headers(rows; delim=';')
+function json_to_xl_headers(rows; delim=';', existing_headers=String[])
+    expanded = _expanded_prefixes(existing_headers)
     seen = OrderedDict{String, Bool}()
     for row in rows
-        _collect_paths!("", row, seen, delim)
+        _collect_paths!("", row, seen, delim, expanded)
     end
     paths = collect(keys(seen))
     # An empty array/dict in one row collapses its prefix to a leaf path; if
@@ -227,29 +259,56 @@ function json_to_xl_headers(rows; delim=';')
     return filter(p -> !any(q -> q != p && startswith(q, p * "/"), paths), paths)
 end
 
-function _collect_paths!(prefix, node::AbstractDict, seen, delim)
+# Strip JSONPointer-style leading `/`, `::type{eltype}` annotations, and the
+# leading `$` localization-source marker. Used purely for matching generated
+# paths to existing Excel column headers by their base name.
+function _norm_header(s::AbstractString)
+    s2 = replace(s, r"^/+" => "")
+    s2 = replace(s2, r"::.*$" => "")
+    s2 = replace(s2, r"^\$" => "")
+    return strip(s2)
+end
+_norm_header(::Any) = ""
+
+# Existing Excel headers shaped like `X/1`, `X/2`, … signal that the array at
+# `X` was originally laid out as indexed columns (one per element). When we
+# rebuild the matrix, scalar arrays under such a prefix must expand back into
+# indexed leaf paths instead of collapsing to a single delimited cell.
+function _expanded_prefixes(existing_headers)
+    s = Set{String}()
+    for h in existing_headers
+        n = _norm_header(h)
+        m = match(r"^(.*)/(\d+)(?:/.*)?$", n)
+        m === nothing && continue
+        push!(s, String(m.captures[1]))
+    end
+    return s
+end
+
+function _collect_paths!(prefix, node::AbstractDict, seen, delim, expanded)
     if isempty(node) && !isempty(prefix)
         seen[prefix] = true
         return
     end
     for (k, v) in node
         path = prefix * "/" * String(k)
-        _collect_paths!(path, v, seen, delim)
+        _collect_paths!(path, v, seen, delim, expanded)
     end
 end
-function _collect_paths!(prefix, node::AbstractArray, seen, delim)
+function _collect_paths!(prefix, node::AbstractArray, seen, delim, expanded)
     if isempty(node)
         seen[prefix] = true
         return
     end
     if all(x -> !isa(x, AbstractDict) && !isa(x, AbstractArray), node)
         # Scalar array: collapse to one delimited cell when joining round-trips
-        # losslessly. If any element string already contains `delim`, expand
-        # into indexed paths to avoid conflating the joiner with content
-        # (matches Excel's `/X/1`, `/X/2` layout for split-string columns).
-        if any(x -> isa(x, AbstractString) && occursin(delim, x), node)
+        # losslessly. Force expansion when (a) the existing Excel laid this
+        # prefix out as indexed columns or (b) any element string already
+        # contains `delim` (joining would conflate the delim with content).
+        forced = _norm_header(prefix) in expanded
+        if forced || any(x -> isa(x, AbstractString) && occursin(delim, x), node)
             for (i, el) in enumerate(node)
-                _collect_paths!(prefix * "/" * string(i), el, seen, delim)
+                _collect_paths!(prefix * "/" * string(i), el, seen, delim, expanded)
             end
         else
             seen[prefix] = true
@@ -258,11 +317,11 @@ function _collect_paths!(prefix, node::AbstractArray, seen, delim)
         # 1-based array indices to match JSONPointer.jl's non-standard indexing
         # (it explicitly rejects "/0/..." paths). See JSONPointer/src/pointer.jl.
         for (i, el) in enumerate(node)
-            _collect_paths!(prefix * "/" * string(i), el, seen, delim)
+            _collect_paths!(prefix * "/" * string(i), el, seen, delim, expanded)
         end
     end
 end
-function _collect_paths!(prefix, node, seen, _delim)
+function _collect_paths!(prefix, node, seen, _delim, _expanded)
     seen[prefix] = true
 end
 
@@ -271,8 +330,8 @@ end
 
 Flatten one row into `(header, leaf_value)` pairs in column order.
 """
-function json_to_xl_row(row::AbstractDict; delim=';')
-    headers = json_to_xl_headers([row]; delim=delim)
+function json_to_xl_row(row::AbstractDict; delim=';', existing_headers=String[])
+    headers = json_to_xl_headers([row]; delim=delim, existing_headers=existing_headers)
     return [h => _get_at_path(row, h) for h in headers]
 end
 
@@ -308,39 +367,57 @@ Honours `start_line` (blank rows above the header), `row_oriented`
 (`false` ⇒ headers in column 1, records as additional columns), and `delim`
 (default `;`) for delimited array cells.
 """
-function json_to_xl_matrix(rows, kwargs)
+function json_to_xl_matrix(rows, kwargs; existing_headers=String[])
     start_line = _kwget(kwargs, :start_line, 1)
     row_oriented = _kwget(kwargs, :row_oriented, true)
     delim = _kwget(kwargs, :delim, ';')
-    headers = json_to_xl_headers(rows; delim=delim)
+    paths = json_to_xl_headers(rows; delim=delim, existing_headers=existing_headers)
+    # `paths` are the JSONPointer-style lookup keys used to fetch cell values.
+    # `display` are the strings written into the header row — when an existing
+    # Excel header normalizes to the same name, we reuse its decorated form so
+    # `::type{eltype}` annotations and the leading `$` localization marker
+    # round-trip back into the column header.
+    display = _decorate_paths(paths, existing_headers)
 
     if row_oriented
-        ncols = max(length(headers), 1)
+        ncols = max(length(paths), 1)
         nrows = (start_line - 1) + 1 + length(rows)
         m = Matrix{Any}(missing, nrows, ncols)
-        for (j, h) in enumerate(headers)
+        for (j, h) in enumerate(display)
             m[start_line, j] = h
         end
         for (i, row) in enumerate(rows)
-            for (j, h) in enumerate(headers)
-                m[start_line + i, j] = json_to_xl_cell(_get_at_path(row, h), delim)
+            for (j, p) in enumerate(paths)
+                m[start_line + i, j] = json_to_xl_cell(_get_at_path(row, p), delim)
             end
         end
         return m
     else
         nrecords = length(rows)
-        nrows = max((start_line - 1) + length(headers), 1)
+        nrows = max((start_line - 1) + length(paths), 1)
         ncols = max(1 + nrecords, 1)
         m = Matrix{Any}(missing, nrows, ncols)
-        for (i, h) in enumerate(headers)
+        for (i, p) in enumerate(paths)
             r = start_line + i - 1
-            m[r, 1] = h
+            m[r, 1] = display[i]
             for (k, row) in enumerate(rows)
-                m[r, 1 + k] = json_to_xl_cell(_get_at_path(row, h), delim)
+                m[r, 1 + k] = json_to_xl_cell(_get_at_path(row, p), delim)
             end
         end
         return m
     end
+end
+
+function _decorate_paths(paths, existing_headers)
+    isempty(existing_headers) && return collect(String, paths)
+    norm_to_existing = Dict{String, String}()
+    for h in existing_headers
+        isa(h, AbstractString) && !isempty(h) || continue
+        n = _norm_header(h)
+        isempty(n) && continue
+        get!(norm_to_existing, n, String(h))
+    end
+    return [get(norm_to_existing, _norm_header(p), p) for p in paths]
 end
 
 # kwargs may be NamedTuple or AbstractDict (from namedtuple() conversion)
